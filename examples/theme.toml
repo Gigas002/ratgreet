@@ -1,0 +1,13 @@
+# Example theme for tuigreet (see docs/PLAN.md §3.2)
+
+[colors]
+container = "blue"
+time = "white"
+text = "white"
+border = "cyan"
+title = "cyan"
+greet = "white"
+prompt = "white"
+input = "white"
+action = "yellow"
+button = "yellow"

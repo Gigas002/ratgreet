@@ -1,0 +1,49 @@
+# Example config for tuigreet (see docs/PLAN.md §3.1)
+
+[logging]
+level = "info"
+# file = "/tmp/tuigreet.log"
+
+[session]
+# cmd = "sway"
+# env = ["MOZ_ENABLE_WAYLAND=1"]
+wayland_dirs = ["/usr/share/wayland-sessions"]
+x11_dirs = ["/usr/share/xsessions"]
+# session_wrapper = "…"
+xsession_wrapper = "startx /usr/bin/env"
+no_xsession_wrapper = false
+
+[ui]
+width = 80
+window_padding = 0
+container_padding = 1
+prompt_padding = 1
+greet_align = "center"
+show_time = false
+# time_format = "%c"
+# greeting = "Welcome"
+issue = false
+
+[remember]
+username = false
+session = false
+user_session = false
+
+[user_menu]
+enabled = false
+min_uid = 1000
+max_uid = 60000
+
+[secrets]
+mask = false
+mask_char = "*"
+
+[keybindings]
+command = 2
+sessions = 3
+power = 12
+
+[power]
+# shutdown = "systemctl poweroff"
+# reboot = "systemctl reboot"
+no_setsid = false

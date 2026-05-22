@@ -1,0 +1,414 @@
+# tuigreet — Rust architecture + implementation plan
+
+This document is both a **human roadmap** and an **agent playbook**: each step is sized for a focused implementation session, ends in a **verified** state (**build** + **fmt/clippy** + **tests** where applicable), and defines **how to verify** it.
+
+It is modeled after the execution discipline in `docs/WAU_RS_PLAN.md` (wau workspace), adapted for a **greetd TUI greeter** — not an addon manager.
+
+Reference plan:
+
+- `docs/WAU_RS_PLAN.md` — quality gates, module/test layout, CI blueprint, dependency policy, phased verification
+
+**Example artifacts** (schemas + minimal CLI) live under `examples/`:
+
+- `examples/config.toml` — greetd paths, sessions, remember/cache, layout, power, keybindings, logging
+- `examples/theme.toml` — TUI colors and style overrides
+- `examples/cli.md` — retained CLI surface (help, version, config/theme paths, debug)
+
+---
+
+## 1. Goals and constraints
+
+### 1.1 Goals
+
+- **Single binary crate** (`tuigreet`): one package, one executable. Internal **module boundaries** (wau-style layout and test discipline) separate core logic from UI — no `libtuigreet` split.
+- **Configuration-first UX**:
+  - **`config.toml`**: everything operators configure today via long CLI flags (sessions, remember, user menu, layout, power commands, keybindings, default command, wrappers, logging).
+  - **`theme.toml`**: visual styling only (replaces `--theme` semicolon string).
+  - **Minimal CLI**: `--help`, `--version`, `--config`, `--theme`, optional `--debug` — no duplicate knobs on the command line.
+- **English-only UI**: drop Fluent/i18n embedding; user-visible strings live in one small module (constants or a tiny `strings` table).
+- **Version without `build.rs`**: print `CARGO_PKG_VERSION` (+ optional `CARGO_PKG_VERSION_PRE` / git metadata via `vergen` only if we later need it — default is **no** build script).
+- **Modern toolchain**: Rust **edition 2024**, dependency policy per §2.1, **`rustix`** instead of **`nix`** for `uname` and any future Unix syscalls.
+- **Platform target**: Linux (greetd). No Windows/macOS scope in this overhaul.
+
+### 1.2 Discipline (non-negotiable)
+
+- **Core-first modules**: greetd IPC, session resolution, config merge, and “what to run after login” live under `src/{ipc,info,config,…}`; `src/ui/` and `src/main.rs` wire the terminal and draw widgets. Avoid circular deps (UI imports core; core does not import UI).
+- **Step sizing**: small, verifiable steps; each phase ends green on §7 quality gates.
+- **Stay slim**: focused modules; prefer directory modules (`mod.rs` + `tests.rs`) over large monolithic files.
+- **Naming**: short, descriptive; optimize for readers.
+
+### 1.3 Non-goals
+
+- GUI outside the terminal, tray apps, or non-greetd display managers.
+- Multi-language UI in the first overhaul pass (no `i18n-embed`, no `contrib/locales/` runtime loading).
+- Preserving every historical CLI flag for backward compatibility — document migration in `CHANGELOG.md` and `examples/config.toml`.
+- Splitting into a separate library crate (deploy workflow ships the `tuigreet` binary only).
+
+### 1.4 Definitions
+
+- **Greeter**: the authentication + session-selection front-end talking to greetd over IPC.
+- **Config**: machine-local `config.toml` (paths, behavior, layout, power, logging defaults).
+- **Theme**: `theme.toml` mapping semantic roles (`container`, `title`, `prompt`, …) to colors.
+- **Settings**: merged runtime view (`cli` overrides > config file > built-in defaults); after construction, downstream code uses **`Settings` only**, not raw `clap` or parsed TOML.
+
+### 1.5 Compatibility reference
+
+Behavior and UX should remain recognizable to existing tuigreet users and greetd packagers:
+
+- [greetd](https://git.sr.ht/~kennylevinsen/greetd) IPC semantics (`greetd_ipc`)
+- Prior tuigreet README options → mapped into `config.toml` / `theme.toml` (see §6 migration table)
+
+---
+
+## 2. Repository layout (target)
+
+```text
+tuigreet/
+  Cargo.toml                  # single package (edition 2024)
+  Cargo.lock                  # committed
+  deny.toml
+  .typos.toml
+  examples/
+    config.toml
+    theme.toml
+    cli.md
+  src/
+    main.rs                   # init tracing, Settings, event loop entry
+    app/
+      mod.rs
+      tests.rs
+    cli/
+      mod.rs
+      tests.rs
+    config/                   # config.toml types + path resolution
+      mod.rs
+      tests.rs
+    theme/                    # theme.toml types + defaults
+      mod.rs
+      tests.rs
+    settings/                 # merged Settings (cli > config > defaults)
+      mod.rs
+      tests.rs
+    greeter/                  # Greeter state machine (from greeter.rs)
+      mod.rs
+      tests.rs
+    ipc/
+      mod.rs
+      tests.rs
+    info/                     # utmp, users, sessions, issue, cache
+      mod.rs
+      tests.rs
+    power/
+      mod.rs
+      tests.rs
+    event/
+      mod.rs
+      tests.rs
+    keyboard/
+      mod.rs
+      tests.rs
+    ui/                       # ratatui drawing only
+      mod.rs
+      strings.rs              # English UI strings (replaces i18n)
+      …
+    integration/              # greetd-stub harness (existing)
+  tests/                      # optional crate-level integration tests
+  docs/
+    PLAN.md
+    WAU_RS_PLAN.md            # reference only
+  contrib/                    # man page, screenshots, fixtures (no locales/)
+```
+
+Module boundary rules:
+
+- **`src/ui/`** does not own greetd protocol or config parsing; it receives `Greeter` / `Settings`.
+- **`src/{ipc,info,config,theme,settings,greeter,power}/`** do not import `ratatui` or `crossterm`.
+- `cli` and file loaders are consumed only inside `settings`; after `Settings` exists, pass **`Settings`** (or `Arc<Greeter>` built from settings) through the stack.
+- `main` stays thin: logger, settings, run loop (or delegate to `app/`).
+
+### 2.0 Module + tests file policy (mandatory)
+
+Same as wau §2.0: **tests never live in the same `.rs` file as production logic.**
+
+```text
+src/config/
+  mod.rs
+  tests.rs
+```
+
+```rust
+// mod.rs
+#[cfg(test)]
+mod tests;
+```
+
+Integration tests: `src/integration/` (greetd-stub, existing harness) and/or `tests/` at crate root. Unit tests always use sibling `tests.rs` per module.
+
+### 2.1 Toolchain and dependency policy
+
+- **Rust edition**: `2024`.
+- **Version requirements**: `x.y` or `x` in `Cargo.toml`; pin via committed `Cargo.lock`.
+- **Dependency health**: widely adopted crates; avoid archived / inactive deps (~1 year rule from wau).
+- **Replacements (overhaul)**:
+
+| Remove / avoid | Replacement / notes |
+|----------------|---------------------|
+| `nix` | `rustix` (`rustix::system::uname` for hostname) |
+| `getopts` | `clap` (minimal derive on binary only) |
+| `i18n-embed`, `i18n-embed-fl`, `rust-embed`, `unic-langid` | English strings module; delete `i18n.toml`, `contrib/locales/` |
+| `build.rs` + `VERSION` env | `CARGO_PKG_VERSION` in `--version` |
+| `lazy_static` | `std::sync::LazyLock` where still needed |
+| `chrono` `unstable-locales` | Plain `chrono` + fixed `en-US` formatting (no locale feature) |
+
+- **Keep (evaluate versions at upgrade time)**: `greetd_ipc`, `ratatui`, `crossterm`, `tokio`, `uzers`, `utmp-rs`, `zeroize`, `tracing` ecosystem, `smart-default` (or derive `Default` manually over time).
+
+### 2.2 Feature gating
+
+- **`nsswrapper`**: optional Cargo feature on the `tuigreet` package, same semantics as today.
+- **CI** must build/test **`default`**, **`--all-features`**, and **`--no-default-features`** (see §7.2).
+
+---
+
+## 3. Configuration files
+
+Illustrative shapes: `examples/config.toml`, `examples/theme.toml`.
+
+### 3.1 Config (`config.toml`)
+
+Purpose: operator-facing behavior — everything that is not pure color styling.
+
+Resolution order:
+
+1. Built-in defaults (documented in `examples/config.toml`)
+2. `/etc/tuigreet/config.toml` (packager) and/or `$XDG_CONFIG_HOME/tuigreet/config.toml`
+3. `--config <path>` override
+
+Suggested sections (names may adjust during implementation):
+
+```toml
+[logging]
+level = "info"          # trace | debug | info | warn | error
+file = "/tmp/tuigreet.log"  # optional file sink when debug enabled
+
+[session]
+cmd = "…"               # optional default command
+env = ["KEY=VALUE"]
+wayland_dirs = ["/usr/share/wayland-sessions"]
+x11_dirs = ["/usr/share/xsessions"]
+session_wrapper = "…"
+xsession_wrapper = "startx /usr/bin/env"
+no_xsession_wrapper = false
+
+[ui]
+width = 80
+window_padding = 0
+container_padding = 1
+prompt_padding = 1
+greet_align = "center"  # left | center | right
+show_time = false
+time_format = "%c"
+issue = false           # mutually exclusive with greeting
+greeting = "Welcome"
+
+[remember]
+username = false
+session = false
+user_session = false
+
+[user_menu]
+enabled = false
+min_uid = 1000
+max_uid = 60000
+
+[secrets]
+mask = false            # was --asterisks
+mask_char = "*"
+
+[keybindings]
+command = 2
+sessions = 3
+power = 12
+
+[power]
+shutdown = "…"
+reboot = "…"
+no_setsid = false
+```
+
+### 3.2 Theme (`theme.toml`)
+
+Purpose: colors for `Themed::*` roles. Replaces `--theme container=…;title=…`.
+
+```toml
+[colors]
+container = "blue"
+time = "white"
+text = "white"
+border = "cyan"
+title = "cyan"
+greet = "white"
+prompt = "white"
+input = "white"
+action = "yellow"
+button = "yellow"
+```
+
+Resolution: `--theme <path>` → else XDG/`/etc` search path → built-in default theme.
+
+### 3.3 CLI (minimal)
+
+Documented in `examples/cli.md`:
+
+| Flag | Purpose |
+|------|---------|
+| `-h`, `--help` | Usage |
+| `-v`, `--version` | `CARGO_PKG_VERSION` (+ target triple optional) |
+| `--config PATH` | Config file |
+| `--theme PATH` | Theme file |
+| `-d`, `--debug [FILE]` | Enable tracing (file from arg or config default) |
+
+**Removed from CLI** (config/theme only): session dirs, remember flags, padding, width, power commands, keybindings, `--issue`/`--greeting`, `--time`, user-menu bounds, `--theme` inline string, `--env`, wrappers, etc.
+
+---
+
+## 4. Quality gates
+
+Whenever a phase/step is marked complete:
+
+- `cargo fmt --check`
+- `typos` (`.typos.toml`)
+- `cargo deny check licenses` (`deny.toml`)
+- `cargo clippy --workspace --all-targets --no-default-features -- -D warnings`
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- `cargo test --workspace --no-default-features`
+- `cargo test --workspace --all-features`
+- `cargo doc --workspace --no-deps` (`RUSTDOCFLAGS=-D warnings`)
+
+### 4.1 Test discipline
+
+- No inline `#[cfg(test)] mod tests { … }` inside implementation files — use sibling `tests.rs`.
+- Integration tests use `greetd-stub`, `tempfile`, and existing `contrib/fixtures/` where applicable.
+- Remove tests that only assert CLI flag parsing for deprecated flags; replace with config/theme parse tests under `src/config/`, `src/theme/`, `src/settings/`.
+
+### 4.2 CI blueprint (tuigreet)
+
+Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
+
+| Workflow | Job |
+|----------|-----|
+| `build.yml` | Release build matrix: default / `--all-features` / `--no-default-features` |
+| `fmt-clippy.yml` | `cargo fmt --check`; clippy matrix (all-features, no-default-features) |
+| `test.yml` | `cargo test` feature matrix (+ optional `cargo llvm-cov -p tuigreet`) |
+| `doc.yml` | `cargo doc --workspace --no-deps` |
+| `typos.yml` | spelling |
+| `deny.yml` | license check |
+| `deploy.yml` | On `v*` tags: build `tuigreet` release binary, strip, tarball `tuigreet-$VERSION-x86_64-linux.tar.gz` |
+| `dependabot.yml` | cargo + github-actions weekly |
+
+**Cleanup from wau copy-paste**: no `-p wau`, `-p libwau`, or codecov flags named `wau`/`libwau`.
+
+---
+
+## 5. Phased steps
+
+### Phase 0 — CI + hygiene
+
+- [x] Copy wau-style workflows into `.github/workflows/`
+- [x] Rename paths/crates in workflows to **tuigreet** (single package)
+- [x] Add `deny.toml`, `.typos.toml`, `dependabot.yml` tuned for this repo
+- [x] Remove wau-only `examples/toc/`; add tuigreet `examples/*.toml` + `examples/cli.md`
+- [x] Drop `build.rs`; version uses `CARGO_PKG_VERSION`
+- [x] Remove `i18n.toml`, `contrib/locales/`, `src/ui/i18n.rs`, `i18n-embed*` deps; English strings in `src/ui/strings.rs`
+- [x] Replace `nix` with `rustix` (uname); drop `lazy_static` / `chrono` locale features (build unblock)
+
+**Verify**: §4 gates on current tree.
+
+### Phase 1 — Module layout + config/theme schemas
+
+- [ ] Reorganize flat `src/*.rs` into directory modules per §2 (`greeter/`, `ipc/`, `info/`, …)
+- [ ] Add `src/config/`, `src/theme/`, `src/settings/` with parse/validate + path resolution
+- [ ] Implement `Settings` merge (cli > file > defaults)
+- [ ] `examples/config.toml` + `examples/theme.toml` match parser
+
+**Verify**: unit tests in `src/config/tests.rs`, `src/theme/tests.rs`, `src/settings/tests.rs`.
+
+### Phase 2 — Minimal CLI + migration
+
+- [ ] Replace `getopts` with `clap`; wire `--config`, `--theme`, `--debug`
+- [ ] Map old CLI flags → config keys in `CHANGELOG.md` migration table
+- [ ] Delete deprecated `Greeter::options()` / `getopts::Matches` surface
+
+**Verify**: `tuigreet --help`; integration tests load config from temp files.
+
+### Phase 3 — Strings + test layout
+
+- [ ] Replace `fl!()` / i18n with `src/ui/strings.rs` (or `src/strings/`)
+- [ ] Move inline tests from `greeter.rs`, `info.rs`, etc. to sibling `tests.rs` files
+- [ ] Keep `src/ui/` free of config parsing; consume `Settings` / `Greeter` only
+
+**Verify**: existing UI/integration tests updated; greetd-stub flows pass.
+
+### Phase 4 — Dependency upgrade
+
+- [ ] Edition 2024 in `Cargo.toml`
+- [ ] `nix` → `rustix` in `info` (hostname)
+- [ ] Bump `ratatui`, `crossterm`, `tokio`, `greetd_ipc`, etc. to current compatible versions
+- [ ] `cargo deny` + clippy clean under new deps
+
+**Verify**: §4 on Linux CI.
+
+### Phase 5 — Docs + release discipline
+
+- [ ] README: config/theme paths, minimal CLI, greetd unit example
+- [ ] `contrib/man/tuigreet-1.scd` updated
+- [ ] Remove stale wau references; keep `docs/WAU_RS_PLAN.md` as read-only reference
+- [ ] Tag release when stable
+
+**Verify**: packager can configure via `/etc/tuigreet/config.toml` only.
+
+---
+
+## 6. CLI → config migration (operator reference)
+
+| Former CLI | New location |
+|------------|----------------|
+| `--cmd`, `--env` | `[session]` |
+| `--sessions`, `--xsessions`, wrappers | `[session]` |
+| `--width`, `*-padding`, `--greet-align` | `[ui]` |
+| `--issue`, `--greeting`, `--time`, `--time-format` | `[ui]` |
+| `--remember*` | `[remember]` |
+| `--user-menu*` | `[user_menu]` |
+| `--asterisks*` | `[secrets]` |
+| `--theme` | `theme.toml` / `--theme` path only |
+| `--power-*`, `--kb-*` | `[power]`, `[keybindings]` |
+| `-d` / `--debug` | `[logging]` + CLI `--debug` |
+
+---
+
+## 7. Definition of done (overhaul v1)
+
+- [ ] Crate builds with Phase 0–4 complete
+- [ ] greetd login, session pick, power menus work via **config.toml** + **theme.toml**
+- [ ] No `build.rs`, no i18n crates, no `nix`
+- [ ] CI green on push/PR (§4.2 workflows, tuigreet naming)
+- [ ] README and examples document the new configuration model
+
+---
+
+## 8. Document maintenance
+
+Update this plan when:
+
+- config/theme schema changes
+- major module layout changes
+- CI workflow names or matrices change
+
+When example shapes change, update `examples/*.toml` and `examples/cli.md` in the same PR.
+
+### Revision history
+
+| Date | Change |
+|------|--------|
+| 2026-05-22 | Initial tuigreet overhaul plan derived from `WAU_RS_PLAN.md`; CI rename, drop i18n/build.rs, config/theme-first, rustix migration, two-crate target layout |
+| 2026-05-22 | Single-crate layout: keep one `tuigreet` binary; module boundaries only (no `libtuigreet`) |
+| 2026-05-22 | Phase 0 complete: CI hygiene, drop i18n/build.rs, English strings, rustix, quality gates green |
