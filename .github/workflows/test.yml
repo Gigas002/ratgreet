@@ -1,0 +1,66 @@
+name: Test and coverage
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        features:
+          - --all-features
+          - ""
+          - --no-default-features
+
+    name: test ${{ matrix.features || 'default' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test-${{ matrix.features }}
+
+      - name: Run tests
+        run: cargo test --workspace ${{ matrix.features }} --verbose
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: Build cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: Run tests
+        run: cargo test --workspace --all-features --verbose
+
+      - name: Generate coverage report (tuigreet)
+        run: cargo llvm-cov --all-features -p tuigreet --lcov --output-path lcov-tuigreet.info
+
+      - name: Upload tuigreet coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./lcov-tuigreet.info
+          flags: tuigreet
+          name: tuigreet
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
