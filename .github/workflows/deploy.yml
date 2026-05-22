@@ -28,16 +28,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build release binary
-        run: cargo build -p tuigreet --release
+        run: cargo build -p ratgreet --release
 
       - name: Strip binary
-        run: strip target/release/tuigreet
+        run: strip target/release/ratgreet
 
       - name: Package archive
         run: |
           VERSION="${GITHUB_REF_NAME:-dev}"
-          ARCHIVE="tuigreet-${VERSION}-x86_64-linux.tar.gz"
-          tar -czf "$ARCHIVE" -C target/release tuigreet
+          ARCHIVE="ratgreet-${VERSION}-x86_64-linux.tar.gz"
+          tar -czf "$ARCHIVE" -C target/release ratgreet
           echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
 
       # Only runs on real tag pushes; skipped for workflow_dispatch.
@@ -59,7 +59,7 @@ jobs:
   #
   #     - uses: dtolnay/rust-toolchain@stable
   #
-  #     - name: Publish tuigreet
-  #       run: cargo publish -p tuigreet
+  #     - name: Publish ratgreet
+  #       run: cargo publish -p ratgreet
   #       env:
   #         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

@@ -12,7 +12,7 @@ use crate::ui::{
     prompt_value, strings,
     util::*,
 };
-use libtuigreet::{
+use libratgreet::{
     greeter::{GreetAlign, Greeter, Mode, SecretDisplay},
     info::get_hostname,
 };

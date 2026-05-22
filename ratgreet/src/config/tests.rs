@@ -79,13 +79,13 @@ fn resolved_paths_default_order() {
 
 #[test]
 fn load_returns_not_found() {
-    let result = load(Path::new("/nonexistent/tuigreet/config.toml"));
+    let result = load(Path::new("/nonexistent/ratgreet/config.toml"));
     assert!(matches!(result, Err(ConfigError::NotFound { .. })));
 }
 
 #[test]
 fn load_layered_missing_override_uses_defaults() {
-    let cfg = load_layered(Some(Path::new("/nonexistent/tuigreet/config.toml")));
+    let cfg = load_layered(Some(Path::new("/nonexistent/ratgreet/config.toml")));
     assert_eq!(cfg.ui.width, Config::default().ui.width);
 }
 

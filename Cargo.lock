@@ -674,7 +674,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
-name = "libtuigreet"
+name = "libratgreet"
 version = "0.10.0"
 dependencies = [
  "chrono",
@@ -960,6 +960,41 @@ dependencies = [
  "strum",
  "time",
  "unicode-segmentation",
+ "unicode-width",
+]
+
+[[package]]
+name = "ratgreet"
+version = "0.10.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "crossterm",
+ "greetd_ipc",
+ "libratgreet",
+ "ratatui",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "ratgreet-tests"
+version = "0.10.0"
+dependencies = [
+ "chrono",
+ "crossterm",
+ "greetd-stub",
+ "libratgreet",
+ "ratatui",
+ "ratgreet",
+ "tempfile",
+ "tokio",
  "unicode-width",
 ]
 
@@ -1446,41 +1481,6 @@ dependencies = [
  "thread_local",
  "tracing-core",
  "tracing-log",
-]
-
-[[package]]
-name = "tuigreet"
-version = "0.10.0"
-dependencies = [
- "chrono",
- "clap",
- "crossterm",
- "greetd_ipc",
- "libtuigreet",
- "ratatui",
- "serde",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "toml",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "tuigreet-tests"
-version = "0.10.0"
-dependencies = [
- "chrono",
- "crossterm",
- "greetd-stub",
- "libtuigreet",
- "ratatui",
- "tempfile",
- "tokio",
- "tuigreet",
- "unicode-width",
 ]
 
 [[package]]

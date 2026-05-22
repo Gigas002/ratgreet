@@ -1,6 +1,6 @@
 use ratatui::prelude::Rect;
 
-use libtuigreet::{Greeter, greeter::Mode};
+use libratgreet::{Greeter, greeter::Mode};
 
 use crate::ui::util::{get_greeting_height, get_height, get_input_width, get_rect_bounds};
 

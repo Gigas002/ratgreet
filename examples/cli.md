@@ -1,4 +1,4 @@
-# tuigreet command line
+# ratgreet command line
 
 The binary exposes only flags operators need at startup. Everything else lives in
 [`config.toml`](config.toml) and [`theme.toml`](theme.toml).
@@ -11,17 +11,17 @@ The binary exposes only flags operators need at startup. Everything else lives i
 | `-V` | `--version` | Print version and exit |
 | | `--config PATH` | Load config from `PATH` only (see resolution below) |
 | | `--theme PATH` | Load theme from `PATH` only |
-| `-d` | `--debug [FILE]` | Enable tracing; optional log file (default `/tmp/tuigreet.log` or `[logging].file`) |
+| `-d` | `--debug [FILE]` | Enable tracing; optional log file (default `/tmp/ratgreet.log` or `[logging].file`) |
 
 There are no subcommands.
 
 ## File resolution
 
-**Without** `--config` / `--theme`, tuigreet merges layers in order (later wins):
+**Without** `--config` / `--theme`, ratgreet merges layers in order (later wins):
 
 1. Built-in defaults
-2. `/etc/tuigreet/config.toml` or `theme.toml`
-3. `$XDG_CONFIG_HOME/tuigreet/` (or `~/.config/tuigreet/`)
+2. `/etc/ratgreet/config.toml` or `theme.toml`
+3. `$XDG_CONFIG_HOME/ratgreet/` (or `~/.config/ratgreet/`)
 
 **With** `--config PATH` or `--theme PATH`, only that file is loaded (no `/etc` or XDG merge).
 
@@ -31,20 +31,20 @@ defaults apply. The greeter still starts.
 ## Examples
 
 ```bash
-# Production: install TOML under /etc/tuigreet/, no flags
-tuigreet
+# Production: install TOML under /etc/ratgreet/, no flags
+ratgreet
 
 # Try the shipped examples from a git checkout
-tuigreet --config ./examples/config.toml --theme ./examples/theme.toml
+ratgreet --config ./examples/config.toml --theme ./examples/theme.toml
 
 # Debug logging to a file
-tuigreet --debug /tmp/tuigreet.log
+ratgreet --debug /tmp/ratgreet.log
 ```
 
 ## greetd
 
 greetd should invoke the binary with minimal arguments. Put session command and UI options
-in tuigreet config, not on the greetd command line.
+in ratgreet config, not on the greetd command line.
 
 greetd (`/etc/greetd/config.toml`):
 
@@ -53,11 +53,11 @@ greetd (`/etc/greetd/config.toml`):
 vt = 1
 
 [default_session]
-command = "tuigreet"
+command = "ratgreet"
 user = "greeter"
 ```
 
-tuigreet (`/etc/tuigreet/config.toml`):
+ratgreet (`/etc/ratgreet/config.toml`):
 
 ```toml
 [session]
@@ -66,7 +66,9 @@ cmd = "sway"
 
 See [greetd’s documentation](https://man.sr.ht/~kennylevinsen/greetd/).
 
-## Migrating from older tuigreet
+## Migrating from tuigreet
+
+The project was renamed **tuigreet → ratgreet**; update greetd `command`, config paths, and packager units accordingly.
 
 Legacy long options (`--cmd`, `--width`, `--theme container=blue;…`, etc.) were removed.
 See [`CHANGELOG.md`](../CHANGELOG.md) for the CLI → TOML mapping table.

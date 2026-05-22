@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-use libtuigreet::Greeter;
+use libratgreet::Greeter;
 
 use crate::ui::{
     Frame,

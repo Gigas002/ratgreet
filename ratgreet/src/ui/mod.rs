@@ -13,7 +13,7 @@ use std::{
 };
 
 use chrono::prelude::*;
-use libtuigreet::{Greeter, Mode, info::capslock_status, model::sessions::SessionSource};
+use libratgreet::{Greeter, Mode, info::capslock_status, model::sessions::SessionSource};
 use ratatui::{
     Terminal,
     layout::{Alignment, Constraint, Direction, Layout},

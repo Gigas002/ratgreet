@@ -1,6 +1,6 @@
 use std::fs::OpenOptions;
 
-use libtuigreet::Greeter;
+use libratgreet::Greeter;
 use tracing_appender::non_blocking::WorkerGuard;
 
 pub fn init(greeter: &Greeter) -> Option<WorkerGuard> {
@@ -16,7 +16,7 @@ pub fn init(greeter: &Greeter) -> Option<WorkerGuard> {
     match (greeter.debug, logfile.open(&greeter.logfile)) {
         (true, Ok(file)) => {
             let (appender, guard) = tracing_appender::non_blocking(file);
-            let target = Targets::new().with_target("tuigreet", LevelFilter::DEBUG);
+            let target = Targets::new().with_target("ratgreet", LevelFilter::DEBUG);
 
             tracing_subscriber::registry()
                 .with(

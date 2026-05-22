@@ -1,6 +1,6 @@
-# tuigreet configuration
+# ratgreet configuration
 #
-# Install as /etc/tuigreet/config.toml (packagers) or ~/.config/tuigreet/config.toml.
+# Install as /etc/ratgreet/config.toml (packagers) or ~/.config/ratgreet/config.toml.
 # Resolution: built-in defaults → /etc → XDG user → --config PATH (see examples/cli.md).
 # Missing, invalid, or empty files are ignored; built-in defaults are used instead.
 
@@ -11,7 +11,7 @@
 # trace | debug | info | warn | error
 level = "info"
 # Default log path when --debug has no FILE argument
-# file = "/tmp/tuigreet.log"
+# file = "/tmp/ratgreet.log"
 
 # ---------------------------------------------------------------------------
 # Session: what runs after login, and where .desktop sessions are found

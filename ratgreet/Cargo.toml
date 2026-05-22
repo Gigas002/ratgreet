@@ -1,22 +1,22 @@
 [package]
-name = "tuigreet"
+name = "ratgreet"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "tuigreet"
+name = "ratgreet"
 path = "src/lib.rs"
 
 [[bin]]
-name = "tuigreet"
+name = "ratgreet"
 path = "src/main.rs"
 
 [features]
-test-harness = ["libtuigreet/test-harness"]
+test-harness = ["libratgreet/test-harness"]
 
 [dependencies]
-libtuigreet = { path = "../libtuigreet" }
+libratgreet = { path = "../libratgreet" }
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"

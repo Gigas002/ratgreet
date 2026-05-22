@@ -12,9 +12,9 @@ use crate::{
 #[cfg(test)]
 mod tests;
 
-/// tuigreet — greetd TUI greeter.
+/// ratgreet — greetd TUI greeter.
 #[derive(Debug, Parser)]
-#[command(name = "tuigreet", about = "Terminal greeter for greetd", version)]
+#[command(name = "ratgreet", about = "Terminal greeter for greetd", version)]
 pub struct Cli {
     /// Load `config.toml` from `PATH` (overrides XDG/`/etc` search).
     #[arg(long, value_name = "PATH")]
@@ -24,7 +24,7 @@ pub struct Cli {
     #[arg(long, value_name = "PATH")]
     pub theme: Option<PathBuf>,
 
-    /// Enable tracing; optional log file (default from config or `/tmp/tuigreet.log`).
+    /// Enable tracing; optional log file (default from config or `/tmp/ratgreet.log`).
     #[arg(
         short = 'd',
         long = "debug",

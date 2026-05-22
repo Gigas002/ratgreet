@@ -1,10 +1,10 @@
-# tuigreet
+# ratgreet
 
 Terminal greeter for [greetd](https://git.sr.ht/~kennylevinsen/greetd). Built with Rust and [ratatui](https://ratatui.rs/).
 
 ## Overview
 
-tuigreet connects to greetd over a Unix socket, draws a TUI login prompt, and starts the configured session. Behavior is defined in **`config.toml`**; colors in **`theme.toml`**. The binary only accepts **`--config`**, **`--theme`**, and **`--debug`** (plus `--help` / `--version`).
+ratgreet connects to greetd over a Unix socket, draws a TUI login prompt, and starts the configured session. Behavior is defined in **`config.toml`**; colors in **`theme.toml`**. The binary only accepts **`--config`**, **`--theme`**, and **`--debug`** (plus `--help` / `--version`).
 
 Invalid or missing config/theme files are skipped; the greeter falls back to built-in defaults and keeps running (warnings appear when tracing is enabled).
 
@@ -18,7 +18,7 @@ Invalid or missing config/theme files are skipped; the greeter falls back to bui
 
 ## Development
 
-Workspace layout: **`libtuigreet/`** (greetd core), **`tuigreet/`** (config, UI, binary), **`tests/`** (greetd-stub integration). Details in [`docs/PLAN.md`](docs/PLAN.md).
+Workspace layout: **`libratgreet/`** (greetd core), **`ratgreet/`** (config, UI, binary), **`tests/`** (greetd-stub integration). Details in [`docs/PLAN.md`](docs/PLAN.md).
 
 ```bash
 cargo test --workspace
@@ -38,18 +38,18 @@ greetd-stub -s /tmp/greetd.sock --user alice:secret
 **Terminal 2:**
 
 ```bash
-GREETD_SOCK=/tmp/greetd.sock cargo run -p tuigreet -- \
+GREETD_SOCK=/tmp/greetd.sock cargo run -p ratgreet -- \
   --config examples/config.toml \
   --theme examples/theme.toml
 ```
 
 Debug builds run `true` after login; release builds need `[session] cmd` in config. See [`examples/cli.md`](examples/cli.md).
 
-The `test-harness` Cargo feature is enabled only by the `tuigreet-tests` crate for in-memory integration tests — not for packagers or manual runs.
+The `test-harness` Cargo feature is enabled only by the `ratgreet-tests` crate for in-memory integration tests — not for packagers or manual runs.
 
-## Migrating from older tuigreet
+## Migrating from tuigreet
 
-Long CLI flags moved to TOML. See [`CHANGELOG.md`](CHANGELOG.md). Removed: user picker (`--user-menu`), remember/cache (`--remember*`).
+The project was renamed **tuigreet → ratgreet** (binary, crates, config paths under `/etc/ratgreet/`). Long CLI flags moved to TOML — see [`CHANGELOG.md`](CHANGELOG.md). Removed: user picker (`--user-menu`), remember/cache (`--remember*`).
 
 ## License
 

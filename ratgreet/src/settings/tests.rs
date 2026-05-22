@@ -17,12 +17,12 @@ fn load_defaults_without_files() {
 #[test]
 fn cli_debug_overrides_logging() {
     let cli = CliOverrides {
-        debug: Some(DebugOverride::LogFile("/var/log/tuigreet.log".into())),
+        debug: Some(DebugOverride::LogFile("/var/log/ratgreet.log".into())),
         ..CliOverrides::default()
     };
     let settings = Settings::load(&cli).unwrap();
     assert!(settings.logging.debug);
-    assert_eq!(settings.logging.file, "/var/log/tuigreet.log");
+    assert_eq!(settings.logging.file, "/var/log/ratgreet.log");
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn load_from_explicit_config_and_theme_paths() {
 #[test]
 fn bad_explicit_config_path_falls_back_to_defaults() {
     let cli = CliOverrides {
-        config: Some(PathBuf::from("/nonexistent/tuigreet/config.toml")),
+        config: Some(PathBuf::from("/nonexistent/ratgreet/config.toml")),
         ..CliOverrides::default()
     };
     let settings = Settings::load(&cli).unwrap();
@@ -62,7 +62,7 @@ fn bad_explicit_config_path_falls_back_to_defaults() {
 #[test]
 fn bad_explicit_theme_path_falls_back_to_defaults() {
     let cli = CliOverrides {
-        theme: Some(PathBuf::from("/nonexistent/tuigreet/theme.toml")),
+        theme: Some(PathBuf::from("/nonexistent/ratgreet/theme.toml")),
         ..CliOverrides::default()
     };
     let settings = Settings::load(&cli).unwrap();

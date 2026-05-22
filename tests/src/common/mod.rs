@@ -20,12 +20,12 @@ use tokio::{
     task::{JoinError, JoinHandle},
 };
 
-use libtuigreet::{
+use libratgreet::{
     event::{Event, Events},
     greeter::Greeter,
     model::sessions::SessionSource,
 };
-use tuigreet::{
+use ratgreet::{
     app::{self, init_greeter},
     settings::{CliOverrides, Settings},
 };
@@ -100,7 +100,7 @@ impl IntegrationRunner {
                 builder(&mut greeter);
             }
 
-            greeter.logfile = "/tmp/tuigreet.log".to_string();
+            greeter.logfile = "/tmp/ratgreet.log".to_string();
             greeter.socket = socket.to_str().unwrap().to_string();
             greeter.events = Some(events.sender());
             greeter.connect().await;
@@ -135,7 +135,7 @@ impl IntegrationRunner {
             }
         }
 
-        assert!(exited, "tuigreet did not exit");
+        assert!(exited, "ratgreet did not exit");
     }
 
     pub async fn join_until_end(&mut self, events: JoinHandle<()>) {

@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyModifiers};
 use libgreetd_stub::SessionOptions;
 
-use libtuigreet::{
+use libratgreet::{
     model::{menu::Menu, power_item::Power, sessions::Session},
     power::PowerOption,
 };

@@ -4,7 +4,7 @@ use crossterm::{
     execute,
     terminal::{LeaveAlternateScreen, disable_raw_mode},
 };
-use libtuigreet::{
+use libratgreet::{
     event::{Event, Events},
     greeter::{AuthStatus, Greeter},
     ipc::Ipc,
@@ -33,7 +33,7 @@ where
     B: Backend,
     <B as Backend>::Error: 'static,
 {
-    tracing::info!("tuigreet started");
+    tracing::info!("ratgreet started");
 
     register_panic_handler();
 
@@ -80,7 +80,7 @@ where
 
             Some(Event::PowerCommand(command)) => {
                 if let PowerPostAction::ClearScreen =
-                    libtuigreet::power::run(&greeter, command).await
+                    libratgreet::power::run(&greeter, command).await
                 {
                     execute!(io::stdout(), LeaveAlternateScreen)?;
                     terminal.set_cursor_position((1, 1))?;

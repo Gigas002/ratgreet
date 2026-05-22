@@ -1,4 +1,4 @@
-//! Greetd-stub integration tests for tuigreet (depends on `libtuigreet` only).
+//! Greetd-stub integration tests for ratgreet (depends on `libratgreet` only).
 
 #[cfg(test)]
 mod auth;

@@ -1,12 +1,12 @@
 [package]
-name = "tuigreet-tests"
+name = "ratgreet-tests"
 version.workspace = true
 edition.workspace = true
 publish = false
 
 [dependencies]
-libtuigreet = { path = "../libtuigreet", features = ["test-harness"] }
-tuigreet = { path = "../tuigreet", features = ["test-harness"] }
+libratgreet = { path = "../libratgreet", features = ["test-harness"] }
+ratgreet = { path = "../ratgreet", features = ["test-harness"] }
 chrono.workspace = true
 greetd-stub = "0.3"
 tempfile.workspace = true

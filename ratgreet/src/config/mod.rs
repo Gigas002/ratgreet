@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(test)]
 mod tests;
 
-pub const DEFAULT_LOG_FILE: &str = "/tmp/tuigreet.log";
+pub const DEFAULT_LOG_FILE: &str = "/tmp/ratgreet.log";
 pub const DEFAULT_XSESSION_WRAPPER: &str = "startx /usr/bin/env";
 pub const DEFAULT_ASTERISKS_CHAR: &str = "*";
 
@@ -199,12 +199,12 @@ pub enum ConfigError {
     Validation(String),
 }
 
-/// Packager path: `/etc/tuigreet/config.toml`.
+/// Packager path: `/etc/ratgreet/config.toml`.
 pub fn system_path() -> PathBuf {
-    PathBuf::from("/etc/tuigreet/config.toml")
+    PathBuf::from("/etc/ratgreet/config.toml")
 }
 
-/// User path: `$XDG_CONFIG_HOME/tuigreet/config.toml` (fallback `~/.config/...`).
+/// User path: `$XDG_CONFIG_HOME/ratgreet/config.toml` (fallback `~/.config/...`).
 pub fn user_path() -> PathBuf {
     config_base_dir().join("config.toml")
 }
@@ -214,7 +214,7 @@ fn config_base_dir() -> PathBuf {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
         .unwrap_or_else(|| PathBuf::from("/"))
-        .join("tuigreet")
+        .join("ratgreet")
 }
 
 /// Returns the explicit override path, or the standard search order (system then user).

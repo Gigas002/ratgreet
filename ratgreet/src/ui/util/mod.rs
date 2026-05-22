@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Paragraph, Wrap},
 };
 
-use libtuigreet::{Greeter, greeter::Mode};
+use libratgreet::{Greeter, greeter::Mode};
 
 pub fn titleize(message: &str) -> String {
     format!(" {message} ")

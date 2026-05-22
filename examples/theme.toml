@@ -1,6 +1,6 @@
-# tuigreet theme
+# ratgreet theme
 #
-# Install as /etc/tuigreet/theme.toml or ~/.config/tuigreet/theme.toml.
+# Install as /etc/ratgreet/theme.toml or ~/.config/ratgreet/theme.toml.
 # Resolution: built-in defaults → /etc → XDG user → --theme PATH (see examples/cli.md).
 #
 # Each [colors] entry is a semantic UI role. Values may be:

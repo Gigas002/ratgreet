@@ -1,4 +1,4 @@
-use libtuigreet::{
+use libratgreet::{
     event::Event,
     greeter::{GreetAlign, Greeter, SecretDisplay},
     info::{get_issue, get_sessions},

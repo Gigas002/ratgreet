@@ -55,7 +55,7 @@ fn example_theme_file_on_disk() {
 
 #[test]
 fn load_layered_missing_override_uses_defaults() {
-    let theme = load_layered(Some(Path::new("/nonexistent/tuigreet/theme.toml")));
+    let theme = load_layered(Some(Path::new("/nonexistent/ratgreet/theme.toml")));
     assert!(theme.colors.container.is_none());
 }
 

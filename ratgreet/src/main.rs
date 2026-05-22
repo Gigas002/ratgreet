@@ -1,9 +1,9 @@
 use std::{io, process};
 
 use clap::Parser;
-use libtuigreet::{event::Events, greeter::AuthStatus};
+use libratgreet::{event::Events, greeter::AuthStatus};
 use ratatui::backend::CrosstermBackend;
-use tuigreet::{app, cli::Cli, settings};
+use ratgreet::{app, cli::Cli, settings};
 
 #[tokio::main]
 async fn main() {

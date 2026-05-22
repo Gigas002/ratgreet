@@ -50,7 +50,7 @@ pub enum ThemeError {
 }
 
 pub fn system_path() -> PathBuf {
-    PathBuf::from("/etc/tuigreet/theme.toml")
+    PathBuf::from("/etc/ratgreet/theme.toml")
 }
 
 pub fn user_path() -> PathBuf {
@@ -62,7 +62,7 @@ fn theme_base_dir() -> PathBuf {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
         .unwrap_or_else(|| PathBuf::from("/"))
-        .join("tuigreet")
+        .join("ratgreet")
 }
 
 pub fn resolved_paths(override_path: Option<&Path>) -> Vec<PathBuf> {

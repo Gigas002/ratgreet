@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use libtuigreet::{Greeter, model::menu::MenuItem};
+use libratgreet::{Greeter, model::menu::MenuItem};
 use ratatui::{
     prelude::Rect,
     style::{Modifier, Style},
@@ -23,7 +23,7 @@ pub trait DrawMenu {
     ) -> Result<(u16, u16), Box<dyn Error>>;
 }
 
-impl<T> DrawMenu for libtuigreet::model::menu::Menu<T>
+impl<T> DrawMenu for libratgreet::model::menu::Menu<T>
 where
     T: MenuItem,
 {
