@@ -2,7 +2,7 @@ use std::{error::Error, io, sync::Arc};
 
 use crossterm::{
     execute,
-    terminal::{disable_raw_mode, LeaveAlternateScreen},
+    terminal::{LeaveAlternateScreen, disable_raw_mode},
 };
 use greetd_ipc::Request;
 use libtuigreet::{
@@ -13,10 +13,10 @@ use libtuigreet::{
     power::PowerPostAction,
 };
 use tokio::sync::RwLock;
-use tui::{backend::Backend, Terminal};
+use ratatui::{Terminal, backend::Backend};
 
 #[cfg(all(not(test), not(feature = "test-harness")))]
-use crossterm::terminal::{enable_raw_mode, EnterAlternateScreen};
+use crossterm::terminal::{EnterAlternateScreen, enable_raw_mode};
 
 use crate::ui::common::style::Theme;
 
@@ -28,6 +28,7 @@ pub async fn run<B>(
 ) -> Result<(), Box<dyn Error>>
 where
     B: Backend,
+    <B as Backend>::Error: 'static,
 {
     tracing::info!("tuigreet started");
 
@@ -93,7 +94,7 @@ where
                     libtuigreet::power::run(&greeter, command).await
                 {
                     execute!(io::stdout(), LeaveAlternateScreen)?;
-                    terminal.set_cursor(1, 1)?;
+                    terminal.set_cursor_position((1, 1))?;
                     terminal.clear()?;
                     disable_raw_mode()?;
 
@@ -141,7 +142,7 @@ fn register_panic_handler() {
 
 #[cfg(all(not(test), not(feature = "test-harness")))]
 fn clear_screen() {
-    use tui::backend::CrosstermBackend;
+    use ratatui::backend::CrosstermBackend;
 
     let backend = CrosstermBackend::new(io::stdout());
 

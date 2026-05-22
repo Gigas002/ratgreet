@@ -2,7 +2,7 @@ use std::{io, process};
 
 use clap::Parser;
 use libtuigreet::{event::Events, greeter::AuthStatus};
-use tui::backend::CrosstermBackend;
+use ratatui::backend::CrosstermBackend;
 use tuigreet::{app, cli::Cli, settings};
 
 #[tokio::main]

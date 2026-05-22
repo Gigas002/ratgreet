@@ -1,11 +1,11 @@
-use tui::{
+use ratatui::{
     prelude::Rect,
     style::{Color, Style},
     text::{Line, Span, Text},
     widgets::{Paragraph, Wrap},
 };
 
-use libtuigreet::{greeter::Mode, Greeter};
+use libtuigreet::{Greeter, greeter::Mode};
 
 use crate::ui::util::{get_greeting_height, get_height, get_input_width, get_rect_bounds};
 

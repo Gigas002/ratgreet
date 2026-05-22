@@ -16,12 +16,12 @@ use utmp_rs::{UtmpEntry, UtmpParser};
 use uzers::os::unix::UserExt;
 
 use crate::{
+    Greeter,
     model::{
         masked::MaskedString,
         sessions::{Session, SessionType},
         users::User,
     },
-    Greeter,
 };
 
 const LAST_USER_USERNAME: &str = "/var/cache/tuigreet/lastuser";

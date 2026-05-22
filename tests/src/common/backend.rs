@@ -39,10 +39,10 @@ use std::{
 use tokio::sync::mpsc;
 use unicode_width::UnicodeWidthStr;
 
-use tui::{
+use ratatui::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
-    layout::{Rect, Size},
+    layout::{Position, Rect, Size},
 };
 
 #[derive(Clone)]
@@ -97,6 +97,8 @@ impl TestBackend {
 }
 
 impl Backend for TestBackend {
+    type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -104,8 +106,7 @@ impl Backend for TestBackend {
         let mut buffer = self.buffer.lock().unwrap();
 
         for (x, y, c) in content {
-            let cell = buffer.get_mut(x, y);
-            *cell = c.clone();
+            buffer[(x, y)] = c.clone();
         }
 
         let sender = self.tick.clone();
@@ -127,12 +128,12 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
-        Ok(self.pos)
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
+        Ok(self.pos.into())
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        self.pos = (x, y);
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+        self.pos = position.into().into();
         Ok(())
     }
 
@@ -141,7 +142,7 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn clear_region(&mut self, clear_type: tui::backend::ClearType) -> io::Result<()> {
+    fn clear_region(&mut self, clear_type: ratatui::backend::ClearType) -> io::Result<()> {
         let buffer = self.buffer.clone();
         let mut buffer = buffer.lock().unwrap();
 
@@ -149,28 +150,36 @@ impl Backend for TestBackend {
             ClearType::All => self.clear()?,
             ClearType::AfterCursor => {
                 let index = buffer.index_of(self.pos.0, self.pos.1) + 1;
-                buffer.content[index..].fill(Cell::default());
+                for cell in &mut buffer.content[index..] {
+                    cell.reset();
+                }
             }
             ClearType::BeforeCursor => {
                 let index = buffer.index_of(self.pos.0, self.pos.1);
-                buffer.content[..index].fill(Cell::default());
+                for cell in &mut buffer.content[..index] {
+                    cell.reset();
+                }
             }
             ClearType::CurrentLine => {
                 let line_start_index = buffer.index_of(0, self.pos.1);
                 let line_end_index = buffer.index_of(self.width - 1, self.pos.1);
-                buffer.content[line_start_index..=line_end_index].fill(Cell::default());
+                for cell in &mut buffer.content[line_start_index..=line_end_index] {
+                    cell.reset();
+                }
             }
             ClearType::UntilNewLine => {
                 let index = buffer.index_of(self.pos.0, self.pos.1);
                 let line_end_index = buffer.index_of(self.width - 1, self.pos.1);
-                buffer.content[index..=line_end_index].fill(Cell::default());
+                for cell in &mut buffer.content[index..=line_end_index] {
+                    cell.reset();
+                }
             }
         }
         Ok(())
     }
 
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
-        let (cur_x, cur_y) = self.get_cursor()?;
+        let Position { x: cur_x, y: cur_y } = self.get_cursor_position()?;
 
         let new_cursor_x = cur_x.saturating_add(1).min(self.width.saturating_sub(1));
 
@@ -183,7 +192,7 @@ impl Backend for TestBackend {
                 self.clear()?;
             }
 
-            self.set_cursor(0, rotate_by)?;
+            self.set_cursor_position((0, rotate_by))?;
             self.clear_region(ClearType::BeforeCursor)?;
             self.buffer
                 .lock()
@@ -193,13 +202,13 @@ impl Backend for TestBackend {
         }
 
         let new_cursor_y = cur_y.saturating_add(n).min(max_y);
-        self.set_cursor(new_cursor_x, new_cursor_y)?;
+        self.set_cursor_position((new_cursor_x, new_cursor_y))?;
 
         Ok(())
     }
 
-    fn size(&self) -> io::Result<Rect> {
-        Ok(Rect::new(0, 0, self.width, self.height))
+    fn size(&self) -> io::Result<Size> {
+        Ok(Size::new(self.width, self.height))
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

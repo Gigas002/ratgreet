@@ -2,5 +2,27 @@
 members = ["libtuigreet", "tuigreet", "tests"]
 resolver = "3"
 
+[workspace.package]
+edition = "2024"
+version = "0.9.1"
+license = "GPL-3.0-or-later"
+
+[workspace.dependencies]
+chrono = "0.4"
+crossterm = { version = "0.29", features = ["event-stream"] }
+greetd_ipc = { version = "0.10", features = ["tokio-codec"] }
+ratatui = { version = "0.30", default-features = false, features = [
+  "crossterm",
+  "unstable",
+] }
+rustix = { version = "1", features = ["system"] }
+tempfile = "3"
+tokio = { version = "1", default-features = false, features = [
+  "macros",
+  "rt-multi-thread",
+] }
+tracing = "0.1"
+tracing-appender = "0.2"
+
 [profile.release]
 lto = true

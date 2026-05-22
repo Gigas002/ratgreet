@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     greeter::Greeter,
-    ipc::{desktop_names_to_xdg, DefaultCommand},
+    ipc::{DefaultCommand, desktop_names_to_xdg},
     model::sessions::{Session, SessionType},
 };
 

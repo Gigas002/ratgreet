@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use tui::{
+use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     text::Span,
     widgets::{Block, BorderType, Borders, Paragraph},
@@ -8,14 +8,14 @@ use tui::{
 
 use libtuigreet::Greeter;
 
-use crate::ui::{common::style::Theme, util::*, Frame};
+use crate::ui::{Frame, common::style::Theme, util::*};
 
 pub fn draw(
     greeter: &mut Greeter,
     _theme: &Theme,
     f: &mut Frame,
 ) -> Result<(u16, u16), Box<dyn Error>> {
-    let size = f.size();
+    let size = f.area();
 
     let width = greeter.width();
     let height: u16 = get_height(greeter) + 1;

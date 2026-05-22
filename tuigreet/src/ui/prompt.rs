@@ -1,17 +1,17 @@
 use std::error::Error;
 
-use rand::{prelude::StdRng, Rng, SeedableRng};
-use tui::{
+use rand::{Rng, SeedableRng, prelude::StdRng};
+use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     text::Span,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
 use crate::ui::{
+    Frame,
     common::style::{Theme, Themed},
     prompt_value,
     util::*,
-    Frame,
 };
 use libtuigreet::{
     greeter::{GreetAlign, Greeter, Mode, SecretDisplay},
@@ -27,7 +27,7 @@ pub fn draw(
     theme: &Theme,
     f: &mut Frame,
 ) -> Result<(u16, u16), Box<dyn Error>> {
-    let size = f.size();
+    let size = f.area();
     let (x, y, width, height) = get_rect_bounds(greeter, size, 0);
 
     let container_padding = greeter.container_padding();
@@ -144,7 +144,7 @@ pub fn draw(
                                     .chars()
                                     .map(|_| {
                                         pool.chars()
-                                            .nth(rng.gen_range(0..pool.chars().count()))
+                                            .nth(rng.random_range(0..pool.chars().count()))
                                             .unwrap()
                                     })
                                     .collect()

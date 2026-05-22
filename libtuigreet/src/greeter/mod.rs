@@ -10,7 +10,7 @@ use std::{
 
 use tokio::{
     net::UnixStream,
-    sync::{mpsc::Sender, RwLock, RwLockWriteGuard},
+    sync::{RwLock, RwLockWriteGuard, mpsc::Sender},
 };
 use tracing_appender::non_blocking::WorkerGuard;
 use zeroize::Zeroize;

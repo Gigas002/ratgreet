@@ -401,10 +401,10 @@ Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 
 ### Phase 4 — Dependency upgrade
 
-- [ ] Edition 2024 in `Cargo.toml`
-- [ ] `nix` → `rustix` in `info` (hostname)
-- [ ] Bump `ratatui`, `crossterm`, `tokio`, `greetd_ipc`, etc. to current compatible versions
-- [ ] `cargo deny` + clippy clean under new deps
+- [x] Edition 2024 in `Cargo.toml`
+- [x] `nix` → `rustix` in `info` (hostname)
+- [x] Bump `ratatui`, `crossterm`, `tokio`, `greetd_ipc`, etc. to current compatible versions
+- [x] `cargo deny` + clippy clean under new deps
 
 **Verify**: §4 on Linux CI.
 
@@ -470,3 +470,4 @@ When example shapes change, update `examples/*.toml` and `examples/cli.md` in th
 | 2026-05-22 | Plan: Phase 3 adds **`libtuigreet`** + thin **`tuigreet`** binary + **`tests/`** so integration harness can link without `src/integration/`                |
 | 2026-05-22 | Phase 2 complete: `clap` minimal CLI, `Settings` wired in `main`, removed `getopts` / `Greeter::options()`                                                 |
 | 2026-05-22 | Phase 3 complete: workspace split `libtuigreet` + `tuigreet` + `tests`; integration harness in `tuigreet-tests`; `test-harness` feature for stub runs   |
+| 2026-05-22 | Phase 4 complete: edition 2024 workspace; rustix 1.x; ratatui 0.30 / crossterm 0.29 / ansi-to-tui 8 / toml 0.9 / thiserror 2; §4 gates green locally   |

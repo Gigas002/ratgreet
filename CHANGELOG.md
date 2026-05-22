@@ -11,7 +11,8 @@
 - CI: wau-style workflows renamed for the `tuigreet` package (`build`, `test`, `fmt-clippy`, `doc`, `typos`, `deny`, `deploy`).
 - Version output uses `CARGO_PKG_VERSION` (removed `build.rs` git script).
 - UI strings are English-only (`src/ui/strings.rs`); removed Fluent/i18n embedding.
-- `nix` replaced with `rustix` for `uname(2)`; `lazy_static` replaced with `std::sync::LazyLock` in `info.rs`.
+- `nix` replaced with `rustix` 1.x for `uname(2)`; `lazy_static` replaced with `std::sync::LazyLock` in `info.rs`.
+- Rust edition **2024** (workspace); dependency bumps: **ratatui** 0.30, **crossterm** 0.29, **ansi-to-tui** 8, **toml** 0.9, **thiserror** 2, **rand** 0.9, **unicode-width** 0.2.
 - CI workflows use a single default build/test/clippy matrix (no optional feature flags).
 - README screenshots live under `docs/images/`.
 

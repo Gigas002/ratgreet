@@ -13,14 +13,14 @@ use std::{
 };
 
 use chrono::prelude::*;
-use libtuigreet::{info::capslock_status, model::sessions::SessionSource, Greeter, Mode};
+use libtuigreet::{Greeter, Mode, info::capslock_status, model::sessions::SessionSource};
 use tokio::sync::RwLock;
-use tui::{
+use ratatui::{
+    Terminal,
     layout::{Alignment, Constraint, Direction, Layout},
     style::Modifier,
     text::{Line, Span},
     widgets::Paragraph,
-    Frame as CrosstermFrame, Terminal,
 };
 use util::buttonize;
 
@@ -28,12 +28,12 @@ use crate::ui::util::should_hide_cursor;
 
 use self::common::style::{Theme, Themed};
 
+pub(super) use ratatui::Frame;
+
 const TITLEBAR_INDEX: usize = 1;
 const STATUSBAR_INDEX: usize = 3;
 const STATUSBAR_LEFT_INDEX: usize = 1;
 const STATUSBAR_RIGHT_INDEX: usize = 2;
-
-pub(super) type Frame<'a> = CrosstermFrame<'a>;
 
 enum Button {
     Command,
@@ -48,13 +48,14 @@ pub async fn draw<B>(
     terminal: &mut Terminal<B>,
 ) -> Result<(), Box<dyn Error>>
 where
-    B: tui::backend::Backend,
+    B: ratatui::backend::Backend,
+    <B as ratatui::backend::Backend>::Error: 'static,
 {
     let mut greeter = greeter.write().await;
     let hide_cursor = should_hide_cursor(&greeter);
 
     terminal.draw(|f| {
-        let size = f.size();
+        let size = f.area();
         let chunks = Layout::default()
             .constraints(
                 [
@@ -147,10 +148,8 @@ where
             _ => self::prompt::draw(&mut greeter, theme, f).ok(),
         };
 
-        if !hide_cursor {
-            if let Some(cursor) = cursor {
-                f.set_cursor(cursor.0 - 1, cursor.1 - 1);
-            }
+        if !hide_cursor && let Some(cursor) = cursor {
+            f.set_cursor_position((cursor.0 - 1, cursor.1 - 1));
         }
     })?;
 

@@ -1,8 +1,8 @@
 [package]
 name = "tuigreet"
-version = "0.9.1"
-edition = "2018"
-license = "GPL-3.0-or-later"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [lib]
 name = "tuigreet"
@@ -19,24 +19,18 @@ test-harness = ["libtuigreet/test-harness"]
 libtuigreet = { path = "../libtuigreet" }
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
-thiserror = "1"
-toml = "0.8"
-ansi-to-tui = "5.0.0-rc.1"
-chrono = "0.4"
-crossterm = { version = "0.27", features = ["event-stream"] }
-greetd_ipc = { version = "0.10", features = ["tokio-codec"] }
-tokio = { version = "1", default-features = false, features = [
-  "macros",
-  "rt-multi-thread",
-] }
-tui = { package = "ratatui", version = "0.27", default-features = false, features = [
-  "crossterm",
-  "unstable"
-] }
-tracing-appender = "0.2"
+thiserror = "2"
+toml = "0.9"
+ansi-to-tui = "8"
+chrono.workspace = true
+crossterm.workspace = true
+greetd_ipc.workspace = true
+tokio.workspace = true
+ratatui.workspace = true
+tracing-appender.workspace = true
 tracing-subscriber = "0.3"
-tracing = "0.1"
-rand = "0.8"
+tracing.workspace = true
+rand = "0.9"
 
 [dev-dependencies]
-tempfile = "3"
+tempfile.workspace = true

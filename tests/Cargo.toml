@@ -1,26 +1,21 @@
 [package]
 name = "tuigreet-tests"
-version = "0.9.1"
-edition = "2018"
+version.workspace = true
+edition.workspace = true
 publish = false
 
 [dependencies]
 libtuigreet = { path = "../libtuigreet", features = ["test-harness"] }
 tuigreet = { path = "../tuigreet", features = ["test-harness"] }
-chrono = "0.4"
+chrono.workspace = true
 greetd-stub = "0.3"
-tempfile = "3"
-unicode-width = "0.1"
-crossterm = { version = "0.27", features = ["event-stream"] }
-tokio = { version = "1", default-features = false, features = [
-  "macros",
-  "rt-multi-thread",
+tempfile.workspace = true
+unicode-width = "0.2"
+crossterm.workspace = true
+tokio = { workspace = true, features = [
   "net",
   "sync",
   "time",
   "process",
 ] }
-tui = { package = "ratatui", version = "0.27", default-features = false, features = [
-  "crossterm",
-  "unstable"
-] }
+ratatui.workspace = true

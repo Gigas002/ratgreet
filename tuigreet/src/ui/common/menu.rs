@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use libtuigreet::{model::menu::MenuItem, Greeter};
-use tui::{
+use libtuigreet::{Greeter, model::menu::MenuItem};
+use ratatui::{
     prelude::Rect,
     style::{Modifier, Style},
     text::Span,
@@ -9,9 +9,9 @@ use tui::{
 };
 
 use crate::ui::{
+    Frame,
     common::style::{Theme, Themed},
     util::{get_rect_bounds, titleize},
-    Frame,
 };
 
 pub trait DrawMenu {
@@ -33,7 +33,7 @@ where
         theme: &Theme,
         f: &mut Frame,
     ) -> Result<(u16, u16), Box<dyn Error>> {
-        let size = f.size();
+        let size = f.area();
         let (x, y, width, height) = get_rect_bounds(greeter, size, self.options.len());
 
         let container = Rect::new(x, y, width, height);

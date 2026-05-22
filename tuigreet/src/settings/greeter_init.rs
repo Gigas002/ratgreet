@@ -61,10 +61,10 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
 
     let sessions = get_sessions(&greeter).unwrap_or_default();
 
-    if let SessionSource::None = greeter.session_source {
-        if !sessions.is_empty() {
-            greeter.session_source = SessionSource::Session(0);
-        }
+    if let SessionSource::None = greeter.session_source
+        && !sessions.is_empty()
+    {
+        greeter.session_source = SessionSource::Session(0);
     }
 
     greeter.sessions = Menu {
@@ -73,26 +73,25 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
         selected: 0,
     };
 
-    if greeter.remember {
-        if let Some(username) = get_last_user_username() {
-            greeter.username = MaskedString::from(username, get_last_user_name());
+    if greeter.remember
+        && let Some(username) = get_last_user_username()
+    {
+        greeter.username = MaskedString::from(username, get_last_user_name());
 
-            if greeter.remember_user_session {
-                if let Ok(command) = get_last_user_command(greeter.username.get()) {
-                    greeter.session_source = SessionSource::Command(command);
-                }
+        if greeter.remember_user_session {
+            if let Ok(command) = get_last_user_command(greeter.username.get()) {
+                greeter.session_source = SessionSource::Command(command);
+            }
 
-                if let Ok(ref session_path) = get_last_user_session(greeter.username.get()) {
-                    if let Some(index) = greeter
-                        .sessions
-                        .options
-                        .iter()
-                        .position(|Session { path, .. }| path.as_deref() == Some(session_path))
-                    {
-                        greeter.sessions.selected = index;
-                        greeter.session_source = SessionSource::Session(greeter.sessions.selected);
-                    }
-                }
+            if let Ok(ref session_path) = get_last_user_session(greeter.username.get())
+                && let Some(index) = greeter
+                    .sessions
+                    .options
+                    .iter()
+                    .position(|Session { path, .. }| path.as_deref() == Some(session_path))
+            {
+                greeter.sessions.selected = index;
+                greeter.session_source = SessionSource::Session(greeter.sessions.selected);
             }
         }
     }
@@ -102,16 +101,15 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
             greeter.session_source = SessionSource::Command(command.trim().to_string());
         }
 
-        if let Ok(ref session_path) = get_last_session_path() {
-            if let Some(index) = greeter
+        if let Ok(ref session_path) = get_last_session_path()
+            && let Some(index) = greeter
                 .sessions
                 .options
                 .iter()
                 .position(|Session { path, .. }| path.as_deref() == Some(session_path))
-            {
-                greeter.sessions.selected = index;
-                greeter.session_source = SessionSource::Session(greeter.sessions.selected);
-            }
+        {
+            greeter.sessions.selected = index;
+            greeter.session_source = SessionSource::Session(greeter.sessions.selected);
         }
     }
 

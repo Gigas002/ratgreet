@@ -1,9 +1,9 @@
 use crate::{
+    Greeter,
     model::{
         menu::Menu,
         sessions::{Session, SessionSource, SessionType},
     },
-    Greeter,
 };
 
 #[test]

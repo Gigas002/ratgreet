@@ -8,7 +8,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use tui::style::Color;
+use ratatui::style::Color;
 
 use crate::ui::common::style::Theme;
 

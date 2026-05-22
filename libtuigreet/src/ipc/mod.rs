@@ -1,12 +1,13 @@
 use std::{borrow::Cow, error::Error, sync::Arc};
 
-use greetd_ipc::{codec::TokioCodec, AuthMessageType, ErrorType, Request, Response};
+use greetd_ipc::{AuthMessageType, ErrorType, Request, Response, codec::TokioCodec};
 use tokio::sync::{
-    mpsc::{Receiver, Sender},
     Mutex, RwLock,
+    mpsc::{Receiver, Sender},
 };
 
 use crate::{
+    AuthStatus, Greeter, Mode,
     event::Event,
     info::{
         delete_last_user_command, delete_last_user_session, write_last_user_command,
@@ -14,7 +15,6 @@ use crate::{
     },
     macros::SafeDebug,
     model::sessions::{Session, SessionSource, SessionType},
-    AuthStatus, Greeter, Mode,
 };
 
 #[derive(Clone)]

@@ -1,11 +1,11 @@
 use ansi_to_tui::IntoText;
-use tui::{
+use ratatui::{
     prelude::Rect,
     text::Text,
     widgets::{Paragraph, Wrap},
 };
 
-use libtuigreet::{greeter::Mode, Greeter};
+use libtuigreet::{Greeter, greeter::Mode};
 
 pub fn titleize(message: &str) -> String {
     format!(" {message} ")

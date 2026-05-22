@@ -13,12 +13,12 @@ use libgreetd_stub::SessionOptions;
 use tempfile::NamedTempFile;
 use tokio::{
     sync::{
-        mpsc::{Receiver, Sender},
         RwLock,
+        mpsc::{Receiver, Sender},
     },
     task::{JoinError, JoinHandle},
 };
-use tui::buffer::Buffer;
+use ratatui::buffer::Buffer;
 
 use libtuigreet::{
     event::{Event, Events},
@@ -27,11 +27,11 @@ use libtuigreet::{
 };
 use tuigreet::{
     app,
-    settings::{init_greeter, CliOverrides, Settings},
+    settings::{CliOverrides, Settings, init_greeter},
 };
 
 pub(super) use self::{
-    backend::{output, TestBackend},
+    backend::{TestBackend, output},
     output::*,
 };
 
@@ -220,9 +220,9 @@ impl IntegrationRunner {
 }
 
 fn rethrow(result: Result<(), JoinError>) {
-    if let Err(err) = result {
-        if let Ok(panick) = err.try_into_panic() {
-            panic::resume_unwind(panick);
-        }
+    if let Err(err) = result
+        && let Ok(panick) = err.try_into_panic()
+    {
+        panic::resume_unwind(panick);
     }
 }
