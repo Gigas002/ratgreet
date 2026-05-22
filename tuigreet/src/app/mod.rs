@@ -4,7 +4,6 @@ use crossterm::{
     execute,
     terminal::{LeaveAlternateScreen, disable_raw_mode},
 };
-use greetd_ipc::Request;
 use libtuigreet::{
     event::{Event, Events},
     greeter::{AuthStatus, Greeter},
@@ -12,8 +11,8 @@ use libtuigreet::{
     keyboard,
     power::PowerPostAction,
 };
-use tokio::sync::RwLock;
 use ratatui::{Terminal, backend::Backend};
+use tokio::sync::RwLock;
 
 #[cfg(all(not(test), not(feature = "test-harness")))]
 use crossterm::terminal::{EnterAlternateScreen, enable_raw_mode};
@@ -22,7 +21,7 @@ use crate::ui::common::style::Theme;
 
 pub async fn run<B>(
     backend: B,
-    mut greeter: Greeter,
+    greeter: Greeter,
     theme: Theme,
     mut events: Events,
 ) -> Result<(), Box<dyn Error>>
@@ -46,20 +45,6 @@ where
     terminal.clear()?;
 
     let ipc = Ipc::new();
-
-    if greeter.remember && !greeter.username.value.is_empty() {
-        greeter.working = true;
-
-        tracing::info!(
-            "creating remembered session for user {}",
-            greeter.username.value
-        );
-
-        ipc.send(Request::CreateSession {
-            username: greeter.username.value.clone(),
-        })
-        .await;
-    }
 
     let greeter = Arc::new(RwLock::new(greeter));
 

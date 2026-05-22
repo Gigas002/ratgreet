@@ -32,16 +32,6 @@ Options:
     -t, --time          display the current date and time
         --time-format FORMAT
                         custom strftime format for displaying date and time
-    -r, --remember      remember last logged-in username
-        --remember-session
-                        remember last selected session
-        --remember-user-session
-                        remember last selected session for each user
-        --user-menu     allow graphical selection of users from a menu
-        --user-menu-min-uid UID
-                        minimum UID to display in the user selection menu
-        --user-menu-max-uid UID
-                        maximum UID to display in the user selection menu
         --theme THEME   define the application theme colors
         --asterisks     display asterisks when a secret is typed
         --asterisks-char CHARS
@@ -75,8 +65,6 @@ The default configuration tends to be as minimal as possible, visually speaking,
 
 The initial prompt container will be 80 column wide. You may change this with `--width` in case you need more space (for example, to account for large PAM challenge messages). Please refer to usage information (`--help`) for more customization options. Various padding settings are available through the `*-padding` options.
 
-You can instruct `tuigreet` to remember the last username that successfully opened a session with the `--remember` option (that way, the username field will be pre-filled). Similarly, the command and session configuration can be retained between runs with the `--remember-session` option (when using this, the `--cmd` value is overridden by manual selections). You can also remember the selected session per user with the `--remember-user-session` flag. In this case, the selected session will only be saved on successful authentication. Check the [cache instructions](#cache-instructions) if `/var/cache/tuigreet` doesn't exist after installing tuigreet.
-
 You may change the command that will be executed after opening a session by hitting `F2` and amending the command. Alternatively, you can list the system-declared sessions (or custom ones) by hitting `F3`. Power options are available through `F12`.
 
 ## Install
@@ -89,15 +77,6 @@ Building from source requires an installation of Rust's `stable` toolchain, incl
 $ git clone https://github.com/apognu/tuigreet && cd tuigreet
 $ cargo build --release
 # mv target/release/tuigreet /usr/local/bin/tuigreet
-```
-
-<a id="cache-instructions"></a>
-Cache directory must be created for `--remember*` features to work. The directory must be owned by the user running the greeter.
-
-```
-# mkdir /var/cache/tuigreet
-# chown greeter:greeter /var/cache/tuigreet
-# chmod 0755 /var/cache/tuigreet
 ```
 
 ### From Arch Linux

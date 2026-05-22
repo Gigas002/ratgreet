@@ -35,13 +35,12 @@ greeting = "hi"
 }
 
 #[test]
-fn rejects_duplicate_keybindings() {
+fn rejects_masked_without_single_mask_char() {
     let err = parse(
         r#"
-[keybindings]
-command = 2
-sessions = 2
-power = 12
+[secrets]
+display = "masked"
+mask_char = "**"
 "#,
     )
     .unwrap_err();
@@ -49,11 +48,13 @@ power = 12
 }
 
 #[test]
-fn rejects_remember_user_session_without_username() {
+fn rejects_duplicate_keybindings() {
     let err = parse(
         r#"
-[remember]
-user_session = true
+[keybindings]
+command = 2
+sessions = 2
+power = 12
 "#,
     )
     .unwrap_err();
@@ -87,5 +88,4 @@ fn example_config_file_on_disk() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/config.toml");
     let cfg = load(&path).unwrap();
     assert_eq!(cfg.ui.container_padding, 1);
-    assert_eq!(cfg.user_menu.min_uid, 1000);
 }

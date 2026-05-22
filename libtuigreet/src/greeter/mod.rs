@@ -22,7 +22,6 @@ use crate::{
         menu::Menu,
         power_item::Power,
         sessions::{Session, SessionSource, SessionType},
-        users::User,
     },
 };
 
@@ -45,50 +44,49 @@ impl Error for AuthStatus {}
 
 // A mode represents the large section of the software, usually screens to be
 // displayed, or the state of the application.
-#[derive(SmartDefault, Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub enum Mode {
     #[default]
     Username,
     Password,
     Action,
-    Users,
     Command,
     Sessions,
     Power,
     Processing,
 }
 
-// This enum models how secret values should be displayed on terminal.
-#[derive(SmartDefault, Debug, Clone)]
+/// How password prompts are shown while the user types.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SecretDisplay {
-    #[default]
-    // All characters hidden.
+    /// Do not render the typed characters.
     Hidden,
-    // All characters are replaced by a placeholder character.
-    Character(String),
+    /// Show the password as entered.
+    Plain,
+    /// Replace each character with a single mask character.
+    Masked(char),
 }
 
-impl SecretDisplay {
-    pub fn show(&self) -> bool {
-        match self {
-            SecretDisplay::Hidden => false,
-            SecretDisplay::Character(_) => true,
-        }
+impl Default for SecretDisplay {
+    fn default() -> Self {
+        Self::Masked('*')
     }
 }
 
-#[derive(SmartDefault)]
+impl SecretDisplay {
+    pub fn shows_input(&self) -> bool {
+        !matches!(self, SecretDisplay::Hidden)
+    }
+}
+
 pub struct Greeter {
     pub debug: bool,
     pub logfile: String,
     pub logger: Option<WorkerGuard>,
 
-    #[default(80)]
     pub width: u16,
     pub window_padding: u16,
-    #[default(2)]
     pub container_padding: u16,
-    #[default(1)]
     pub prompt_padding: u16,
     pub greet_align: GreetAlign,
 
@@ -120,10 +118,6 @@ pub struct Greeter {
     // Wrapper command to prepend to X11 sessions.
     pub xsession_wrapper: Option<String>,
 
-    // Whether user menu is enabled.
-    pub user_menu: bool,
-    // Menu for user selection.
-    pub users: Menu<User>,
     // Current username. Masked to display the full name if available.
     pub username: MaskedString,
     // Prompt that should be displayed to ask for entry.
@@ -133,13 +127,6 @@ pub struct Greeter {
     pub asking_for_secret: bool,
     // How should secrets be displayed?
     pub secret_display: SecretDisplay,
-
-    // Whether last logged-in user should be remembered.
-    pub remember: bool,
-    // Whether last launched session (regardless of user) should be remembered.
-    pub remember_session: bool,
-    // Whether last launched session for the current user should be remembered.
-    pub remember_user_session: bool,
 
     // Display the current time
     pub time: bool,
@@ -155,11 +142,8 @@ pub struct Greeter {
     // Whether to prefix the power commands with `setsid`.
     pub power_setsid: bool,
 
-    #[default(2)]
     pub kb_command: u8,
-    #[default(3)]
     pub kb_sessions: u8,
-    #[default(12)]
     pub kb_power: u8,
 
     // The software is waiting for a response from `greetd`.
@@ -168,6 +152,50 @@ pub struct Greeter {
     pub done: bool,
     // Should we exit?
     pub exit: Option<AuthStatus>,
+}
+
+impl Default for Greeter {
+    fn default() -> Self {
+        Self {
+            debug: false,
+            logfile: String::new(),
+            logger: None,
+            width: 80,
+            window_padding: 0,
+            container_padding: 2,
+            prompt_padding: 1,
+            greet_align: GreetAlign::default(),
+            socket: String::new(),
+            stream: None,
+            events: None,
+            mode: Mode::default(),
+            previous_mode: Mode::default(),
+            cursor_offset: 0,
+            previous_buffer: None,
+            buffer: String::new(),
+            session_source: SessionSource::default(),
+            session_paths: Vec::new(),
+            sessions: Menu::default(),
+            session_wrapper: None,
+            xsession_wrapper: None,
+            username: MaskedString::default(),
+            prompt: None,
+            asking_for_secret: false,
+            secret_display: SecretDisplay::default(),
+            time: false,
+            time_format: None,
+            greeting: None,
+            message: None,
+            powers: Menu::default(),
+            power_setsid: false,
+            kb_command: 2,
+            kb_sessions: 3,
+            kb_power: 12,
+            working: false,
+            done: false,
+            exit: None,
+        }
+    }
 }
 
 impl Drop for Greeter {

@@ -9,12 +9,8 @@ use tokio::sync::{
 use crate::{
     AuthStatus, Greeter, Mode,
     event::Event,
-    info::{
-        delete_last_user_command, delete_last_user_session, write_last_user_command,
-        write_last_user_session, write_last_username,
-    },
     macros::SafeDebug,
-    model::sessions::{Session, SessionSource, SessionType},
+    model::sessions::{Session, SessionType},
 };
 
 #[derive(Clone)]
@@ -138,43 +134,6 @@ impl Ipc {
             Response::Success => {
                 if greeter.done {
                     tracing::info!("greetd acknowledged session start, exiting");
-
-                    if greeter.remember {
-                        tracing::info!("caching last successful username");
-
-                        write_last_username(&greeter.username);
-
-                        if greeter.remember_user_session {
-                            match greeter.session_source {
-                                SessionSource::Command(ref command) => {
-                                    tracing::info!("caching last user command: {command}");
-
-                                    write_last_user_command(&greeter.username.value, command);
-                                    delete_last_user_session(&greeter.username.value);
-                                }
-
-                                SessionSource::Session(index) => {
-                                    if let Some(Session {
-                                        path: Some(session_path),
-                                        ..
-                                    }) = greeter.sessions.options.get(index)
-                                    {
-                                        tracing::info!(
-                                            "caching last user session: {session_path:?}"
-                                        );
-
-                                        write_last_user_session(
-                                            &greeter.username.value,
-                                            session_path,
-                                        );
-                                        delete_last_user_command(&greeter.username.value);
-                                    }
-                                }
-
-                                _ => {}
-                            }
-                        }
-                    }
 
                     if let Some(ref sender) = greeter.events {
                         let _ = sender.send(Event::Exit(AuthStatus::Success)).await;

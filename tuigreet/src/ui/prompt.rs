@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use rand::{Rng, SeedableRng, prelude::StdRng};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     text::Span,
@@ -90,15 +89,8 @@ pub fn draw(
         f.render_widget(greeting_label, chunks[GREETING_INDEX]);
     }
 
-    let username_label = if greeter.user_menu && greeter.username.value.is_empty() {
-        let prompt_text = Span::from(fl!("select_user"));
-
-        Paragraph::new(prompt_text).alignment(Alignment::Center)
-    } else {
-        let username_text = prompt_value(theme, Some(fl!("username")));
-
-        Paragraph::new(username_text)
-    };
+    let username_text = prompt_value(theme, Some(fl!("username")));
+    let username_label = Paragraph::new(username_text);
 
     let username = greeter.username.get();
     let username_value_text = Span::from(username);
@@ -108,17 +100,15 @@ pub fn draw(
         Mode::Username | Mode::Password | Mode::Action => {
             f.render_widget(username_label, chunks[USERNAME_INDEX]);
 
-            if !greeter.user_menu || !greeter.username.value.is_empty() {
-                f.render_widget(
-                    username_value,
-                    Rect::new(
-                        1 + chunks[USERNAME_INDEX].x + fl!("username").chars().count() as u16,
-                        chunks[USERNAME_INDEX].y,
-                        get_input_width(greeter, width, &Some(fl!("username"))),
-                        1,
-                    ),
-                );
-            }
+            f.render_widget(
+                username_value,
+                Rect::new(
+                    1 + chunks[USERNAME_INDEX].x + fl!("username").chars().count() as u16,
+                    chunks[USERNAME_INDEX].y,
+                    get_input_width(greeter, width, &Some(fl!("username"))),
+                    1,
+                ),
+            );
 
             let answer_text = if greeter.working {
                 Span::from(fl!("wait"))
@@ -131,27 +121,17 @@ pub fn draw(
             if greeter.mode == Mode::Password || greeter.previous_mode == Mode::Password {
                 f.render_widget(answer_label, chunks[ANSWER_INDEX]);
 
-                if !greeter.asking_for_secret || greeter.secret_display.show() {
-                    let value = match (greeter.asking_for_secret, &greeter.secret_display) {
-                        (true, SecretDisplay::Character(pool)) => {
-                            if pool.chars().count() == 1 {
-                                pool.repeat(greeter.buffer.chars().count())
-                            } else {
-                                let mut rng = StdRng::seed_from_u64(0);
-
-                                greeter
-                                    .buffer
-                                    .chars()
-                                    .map(|_| {
-                                        pool.chars()
-                                            .nth(rng.random_range(0..pool.chars().count()))
-                                            .unwrap()
-                                    })
-                                    .collect()
+                if !greeter.asking_for_secret || greeter.secret_display.shows_input() {
+                    let value = if greeter.asking_for_secret {
+                        match greeter.secret_display {
+                            SecretDisplay::Hidden => String::new(),
+                            SecretDisplay::Plain => greeter.buffer.clone(),
+                            SecretDisplay::Masked(c) => {
+                                std::iter::repeat_n(c, greeter.buffer.chars().count()).collect()
                             }
                         }
-
-                        _ => greeter.buffer.clone(),
+                    } else {
+                        greeter.buffer.clone()
                     };
 
                     let answer_value_text = Span::from(value);
@@ -195,7 +175,7 @@ pub fn draw(
             let answer_length = greeter.buffer.chars().count();
             let offset = get_cursor_offset(greeter, answer_length);
 
-            if greeter.asking_for_secret && !greeter.secret_display.show() {
+            if greeter.asking_for_secret && !greeter.secret_display.shows_input() {
                 Ok((
                     1 + cursor.x + greeter.prompt_width() as u16,
                     ANSWER_INDEX as u16 + prompt_padding + cursor.y - 1,

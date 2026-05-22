@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use libgreetd_stub::SessionOptions;
 
 use libtuigreet::{
-    model::{menu::Menu, power_item::Power, sessions::Session, users::User},
+    model::{menu::Menu, power_item::Power, sessions::Session},
     power::PowerOption,
 };
 
@@ -214,80 +214,4 @@ async fn power_menu() {
     });
 
     runner.join_until_end(events).await;
-}
-
-#[tokio::test]
-async fn users_menu() {
-    let opts = SessionOptions {
-        username: "apognu".to_string(),
-        password: "password".to_string(),
-        mfa: false,
-    };
-
-    let mut runner = IntegrationRunner::new(
-        opts,
-        Some(|greeter| {
-            greeter.user_menu = true;
-            greeter.users = Menu::<User> {
-                title: "The users".to_string(),
-                options: vec![
-                    User {
-                        username: "apognu".to_string(),
-                        name: Some("Antoine POPINEAU".to_string()),
-                    },
-                    User {
-                        username: "bob".to_string(),
-                        name: Some("Bob JOE".to_string()),
-                    },
-                ],
-                selected: 0,
-            }
-        }),
-    )
-    .await;
-
-    let events = tokio::task::spawn({
-        let mut runner = runner.clone();
-
-        async move {
-            runner.wait_until_buffer_contains("select a user").await;
-
-            runner.send_key(KeyCode::Enter).await;
-            runner.wait_for_render().await;
-
-            assert!(runner.output().await.contains("Antoine POPINEAU"));
-            assert!(runner.output().await.contains("Bob JOE"));
-
-            runner.send_key(KeyCode::Down).await;
-            runner.send_key(KeyCode::Enter).await;
-            runner.wait_for_render().await;
-
-            assert!(runner.output().await.contains("Username: Bob JOE"));
-            assert!(runner.output().await.contains("Password:"));
-
-            runner.send_key(KeyCode::Esc).await;
-            runner.wait_for_render().await;
-
-            runner.wait_until_buffer_contains("select a user").await;
-
-            runner.send_text("otheruser").await;
-            runner.wait_for_render().await;
-
-            assert!(runner.output().await.contains("Username: otheruser"));
-            assert!(runner.output().await.contains("Password:"));
-
-            runner.send_key(KeyCode::Esc).await;
-            runner.send_key(KeyCode::Enter).await;
-            runner.send_key(KeyCode::Up).await;
-            runner.send_key(KeyCode::Enter).await;
-            runner.wait_for_render().await;
-
-            assert!(runner.output().await.contains("Username: Antoine POPINEAU"));
-            assert!(runner.output().await.contains("Password:"));
-
-            runner.send_text("password").await;
-        }
-    });
-
-    runner.join_until_client_exit(events).await;
 }

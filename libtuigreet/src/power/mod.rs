@@ -4,7 +4,7 @@ use tokio::{process::Command, sync::RwLock};
 
 use crate::{Greeter, Mode, event::Event, model::power_item::Power};
 
-#[derive(SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum PowerOption {
     #[default]
     Shutdown,

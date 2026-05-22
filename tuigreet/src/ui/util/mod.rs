@@ -1,7 +1,5 @@
-use ansi_to_tui::IntoText;
 use ratatui::{
     prelude::Rect,
-    text::Text,
     widgets::{Paragraph, Wrap},
 };
 
@@ -21,11 +19,7 @@ pub fn buttonize(message: &str) -> String {
 pub fn should_hide_cursor(greeter: &Greeter) -> bool {
     greeter.working
         || greeter.done
-        || (greeter.user_menu
-            && greeter.mode == Mode::Username
-            && greeter.username.value.is_empty())
         || (greeter.mode == Mode::Password && greeter.prompt.is_none())
-        || greeter.mode == Mode::Users
         || greeter.mode == Mode::Sessions
         || greeter.mode == Mode::Power
         || greeter.mode == Mode::Processing
@@ -54,7 +48,7 @@ pub fn get_height(greeter: &Greeter) -> u16 {
             Some(_) => (2 * container_padding) + prompt_padding + 2,
             None => (2 * container_padding) + 1,
         },
-        Mode::Users | Mode::Sessions | Mode::Power | Mode::Processing => 2 * container_padding,
+        Mode::Sessions | Mode::Power | Mode::Processing => 2 * container_padding,
     };
 
     match greeter.mode {
@@ -131,12 +125,7 @@ pub fn get_greeting_height(
     if let Some(greeting) = &greeter.greeting {
         let width = greeter.width();
 
-        let text = match greeting.clone().trim().into_text() {
-            Ok(text) => text,
-            Err(_) => Text::raw(greeting),
-        };
-
-        let paragraph = Paragraph::new(text.clone()).wrap(Wrap { trim: false });
+        let paragraph = Paragraph::new(greeting.trim()).wrap(Wrap { trim: false });
         let height = paragraph.line_count(width - (2 * padding)) + 1;
 
         (Some(paragraph), height as u16)

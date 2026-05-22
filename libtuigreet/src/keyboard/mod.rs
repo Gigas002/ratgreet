@@ -6,15 +6,10 @@ use tokio::sync::RwLock;
 
 use crate::{
     Greeter, Mode,
-    info::{
-        delete_last_command, delete_last_session, get_last_user_command, get_last_user_session,
-        write_last_command, write_last_session_path,
-    },
     ipc::Ipc,
     model::{
         masked::MaskedString,
         sessions::{Session, SessionSource},
-        users::User,
     },
     power::power,
 };
@@ -75,7 +70,7 @@ pub async fn handle(
                 greeter.cursor_offset = 0;
             }
 
-            Mode::Users | Mode::Sessions | Mode::Power => {
+            Mode::Sessions | Mode::Power => {
                 greeter.mode = greeter.previous_mode;
             }
 
@@ -103,7 +98,7 @@ pub async fn handle(
             ..
         } if i == greeter.kb_command => {
             greeter.previous_mode = match greeter.mode {
-                Mode::Users | Mode::Command | Mode::Sessions | Mode::Power => greeter.previous_mode,
+                Mode::Command | Mode::Sessions | Mode::Power => greeter.previous_mode,
                 _ => greeter.mode,
             };
 
@@ -126,7 +121,7 @@ pub async fn handle(
             ..
         } if i == greeter.kb_sessions => {
             greeter.previous_mode = match greeter.mode {
-                Mode::Users | Mode::Command | Mode::Sessions | Mode::Power => greeter.previous_mode,
+                Mode::Command | Mode::Sessions | Mode::Power => greeter.previous_mode,
                 _ => greeter.mode,
             };
 
@@ -141,7 +136,7 @@ pub async fn handle(
             ..
         } if i == greeter.kb_power => {
             greeter.previous_mode = match greeter.mode {
-                Mode::Users | Mode::Command | Mode::Sessions | Mode::Power => greeter.previous_mode,
+                Mode::Command | Mode::Sessions | Mode::Power => greeter.previous_mode,
                 _ => greeter.mode,
             };
 
@@ -152,12 +147,6 @@ pub async fn handle(
         KeyEvent {
             code: KeyCode::Up, ..
         } => {
-            if let Mode::Users = greeter.mode
-                && greeter.users.selected > 0
-            {
-                greeter.users.selected -= 1;
-            }
-
             if let Mode::Sessions = greeter.mode
                 && greeter.sessions.selected > 0
             {
@@ -176,12 +165,6 @@ pub async fn handle(
             code: KeyCode::Down,
             ..
         } => {
-            if let Mode::Users = greeter.mode
-                && greeter.users.selected < greeter.users.options.len() - 1
-            {
-                greeter.users.selected += 1;
-            }
-
             if let Mode::Sessions = greeter.mode
                 && greeter.sessions.selected < greeter.sessions.options.len() - 1
             {
@@ -237,18 +220,6 @@ pub async fn handle(
                 validate_username(&mut greeter, &ipc).await
             }
 
-            Mode::Username if greeter.user_menu => {
-                greeter.previous_mode = match greeter.mode {
-                    Mode::Users | Mode::Command | Mode::Sessions | Mode::Power => {
-                        greeter.previous_mode
-                    }
-                    _ => greeter.mode,
-                };
-
-                greeter.buffer = greeter.previous_buffer.take().unwrap_or_default();
-                greeter.mode = Mode::Users;
-            }
-
             Mode::Username => {}
 
             Mode::Password => {
@@ -267,25 +238,8 @@ pub async fn handle(
                 greeter.sessions.selected = 0;
                 greeter.session_source = SessionSource::Command(greeter.buffer.clone());
 
-                if greeter.remember_session {
-                    write_last_command(&greeter.buffer);
-                    delete_last_session();
-                }
-
                 greeter.buffer = greeter.previous_buffer.take().unwrap_or_default();
                 greeter.mode = greeter.previous_mode;
-            }
-
-            Mode::Users => {
-                let username = greeter.users.options.get(greeter.users.selected).cloned();
-
-                if let Some(User { username, name }) = username {
-                    greeter.username = MaskedString::from(username, name);
-                }
-
-                greeter.mode = greeter.previous_mode;
-
-                validate_username(&mut greeter, &ipc).await;
             }
 
             Mode::Sessions => {
@@ -295,14 +249,7 @@ pub async fn handle(
                     .get(greeter.sessions.selected)
                     .cloned();
 
-                if let Some(Session { path, .. }) = session {
-                    if greeter.remember_session
-                        && let Some(ref path) = path
-                    {
-                        write_last_session_path(path);
-                        delete_last_command();
-                    }
-
+                if let Some(Session { .. }) = session {
                     greeter.session_source = SessionSource::Session(greeter.sessions.selected);
                 }
 
@@ -421,28 +368,6 @@ async fn validate_username(greeter: &mut Greeter, ipc: &Ipc) {
     })
     .await;
     greeter.buffer = String::new();
-
-    if greeter.remember_user_session {
-        if let Ok(last_session) = get_last_user_session(&greeter.username.value)
-            && let Some(last_session) = Session::from_path(greeter, last_session).cloned()
-        {
-            tracing::info!("remembered user session is {}", last_session.name);
-
-            greeter.sessions.selected = greeter
-                .sessions
-                .options
-                .iter()
-                .position(|sess| sess.path == last_session.path)
-                .unwrap_or(0);
-            greeter.session_source = SessionSource::Session(greeter.sessions.selected);
-        }
-
-        if let Ok(command) = get_last_user_command(&greeter.username.value) {
-            tracing::info!("remembered user command is {}", command);
-
-            greeter.session_source = SessionSource::Command(command);
-        }
-    }
 }
 
 #[cfg(test)]

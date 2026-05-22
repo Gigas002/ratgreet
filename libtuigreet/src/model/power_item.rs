@@ -4,7 +4,7 @@ use crate::power::PowerOption;
 
 use super::menu::MenuItem;
 
-#[derive(SmartDefault, Clone)]
+#[derive(Clone, Default)]
 pub struct Power {
     pub action: PowerOption,
     pub label: String,

@@ -7,7 +7,7 @@ use crate::Greeter;
 
 use super::menu::MenuItem;
 
-#[derive(SmartDefault)]
+#[derive(Default)]
 pub enum SessionSource {
     #[default]
     None,
@@ -53,7 +53,7 @@ impl SessionSource {
     }
 }
 
-#[derive(SmartDefault, Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 pub enum SessionType {
     X11,
     Wayland,
@@ -73,7 +73,7 @@ impl SessionType {
     }
 }
 
-#[derive(SmartDefault, Clone)]
+#[derive(Clone, Default)]
 pub struct Session {
     pub slug: Option<String>,
     pub name: String,

@@ -1,9 +1,4 @@
-use ratatui::{
-    prelude::Rect,
-    style::{Color, Style},
-    text::{Line, Span, Text},
-    widgets::{Paragraph, Wrap},
-};
+use ratatui::prelude::Rect;
 
 use libtuigreet::{Greeter, greeter::Mode};
 
@@ -109,39 +104,14 @@ fn greeting_height_two_lines() {
 }
 
 #[test]
-fn ansi_greeting_height_one_line() {
+fn greeting_plain_text_ignores_ansi_escapes_in_layout() {
     let mut greeter = Greeter::default();
     greeter.width = 15;
     greeter.container_padding = 2;
     greeter.greeting = Some("\x1b[31mHello\x1b[0m World".into());
 
-    let (text, height) = get_greeting_height(&greeter, 1, 0);
+    let (_, height) = get_greeting_height(&greeter, 1, 0);
 
-    let expected = Paragraph::new(Text::from(vec![Line::from(vec![
-        Span::styled("Hello", Style::default().fg(Color::Red)),
-        Span::styled(" World", Style::reset()),
-    ])]))
-    .wrap(Wrap { trim: false });
-
-    assert_eq!(text, Some(expected));
-    assert_eq!(height, 2);
-}
-
-#[test]
-fn ansi_greeting_height_two_lines() {
-    let mut greeter = Greeter::default();
-    greeter.width = 8;
-    greeter.container_padding = 2;
-    greeter.greeting = Some("\x1b[31mHello\x1b[0m World".into());
-
-    let (text, height) = get_greeting_height(&greeter, 1, 0);
-
-    let expected = Paragraph::new(Text::from(vec![Line::from(vec![
-        Span::styled("Hello", Style::default().fg(Color::Red)),
-        Span::styled(" World", Style::reset()),
-    ])]))
-    .wrap(Wrap { trim: false });
-
-    assert_eq!(text, Some(expected));
+    // Greeting is rendered as plain text; escape sequences count toward width/wrap.
     assert_eq!(height, 3);
 }

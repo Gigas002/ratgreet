@@ -1,14 +1,10 @@
 use std::time::Duration;
 
-use crossterm::event::{Event as TermEvent, KeyEvent};
-use futures::{StreamExt, future::FutureExt};
+use crossterm::event::KeyEvent;
 use tokio::{
     process::Command,
     sync::mpsc::{self, Sender},
 };
-
-#[cfg(all(not(test), not(feature = "test-harness")))]
-use crossterm::event::EventStream;
 
 use crate::AuthStatus;
 
@@ -29,34 +25,32 @@ pub struct Events {
 impl Events {
     pub async fn new() -> Events {
         let (tx, rx) = mpsc::channel(10);
+        let frame_duration = Duration::from_secs_f64(1.0 / FRAME_RATE);
 
         tokio::task::spawn({
             let tx = tx.clone();
 
             async move {
-                #[cfg(all(not(test), not(feature = "test-harness")))]
-                let mut stream = EventStream::new();
-
-                // Integration/unit tests inject keys via the event channel; do not read the TTY.
                 #[cfg(any(test, feature = "test-harness"))]
-                let mut stream = futures::stream::pending::<Result<TermEvent, ()>>();
+                {
+                    let mut render_interval = tokio::time::interval(frame_duration);
+                    loop {
+                        render_interval.tick().await;
+                        let _ = tx.send(Event::Render).await;
+                    }
+                }
 
-                let mut render_interval =
-                    tokio::time::interval(Duration::from_secs_f64(1.0 / FRAME_RATE));
-
+                #[cfg(all(not(test), not(feature = "test-harness")))]
                 loop {
-                    let render = render_interval.tick();
-                    let event = stream.next().fuse();
-
-                    tokio::select! {
-                      event = event => {
-                        if let Some(Ok(TermEvent::Key(event))) = event {
-                          let _ = tx.send(Event::Key(event)).await;
-                          let _ = tx.send(Event::Render).await;
+                    if crossterm::event::poll(frame_duration).unwrap_or(false) {
+                        while let Ok(event) = crossterm::event::read() {
+                            if let crossterm::event::Event::Key(key) = event {
+                                let _ = tx.send(Event::Key(key)).await;
+                                let _ = tx.send(Event::Render).await;
+                            }
                         }
-                      }
-
-                      _ = render => { let _ = tx.send(Event::Render).await; },
+                    } else {
+                        let _ = tx.send(Event::Render).await;
                     }
                 }
             }

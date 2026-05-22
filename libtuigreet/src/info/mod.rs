@@ -2,8 +2,7 @@ use std::{
     env,
     error::Error,
     ffi::CStr,
-    fs::{self, File},
-    io::{self, BufRead, BufReader},
+    fs::{self},
     path::{Path, PathBuf},
     process::Command,
     sync::LazyLock,
@@ -12,25 +11,11 @@ use std::{
 use chrono::Local;
 use ini::Ini;
 use rustix::system::uname;
-use utmp_rs::{UtmpEntry, UtmpParser};
-use uzers::os::unix::UserExt;
 
 use crate::{
     Greeter,
-    model::{
-        masked::MaskedString,
-        sessions::{Session, SessionType},
-        users::User,
-    },
+    model::sessions::{Session, SessionType},
 };
-
-const LAST_USER_USERNAME: &str = "/var/cache/tuigreet/lastuser";
-const LAST_USER_NAME: &str = "/var/cache/tuigreet/lastuser-name";
-const LAST_COMMAND: &str = "/var/cache/tuigreet/lastsession";
-const LAST_SESSION: &str = "/var/cache/tuigreet/lastsession-path";
-
-const DEFAULT_MIN_UID: u16 = 1000;
-const DEFAULT_MAX_UID: u16 = 60000;
 
 static XDG_DATA_DIRS: LazyLock<Vec<PathBuf>> = LazyLock::new(|| {
     let value = env::var("XDG_DATA_DIRS").unwrap_or("/usr/local/share:/usr/share".to_string());
@@ -69,19 +54,8 @@ pub fn get_issue() -> Option<String> {
         )
     };
 
-    let user_count = match UtmpParser::from_path("/var/run/utmp")
-        .map(|utmp| {
-            utmp.into_iter().fold(0, |acc, entry| match entry {
-                Ok(UtmpEntry::UserProcess { .. }) => acc + 1,
-                Ok(UtmpEntry::LoginProcess { .. }) => acc + 1,
-                _ => acc,
-            })
-        })
-        .unwrap_or(0)
-    {
-        n if n < 2 => format!("{n} user"),
-        n => format!("{n} users"),
-    };
+    // `\U` in /etc/issue historically counts utmp logins; we no longer read utmp.
+    let user_count = "0 user";
 
     let vtnr: usize = env::var("XDG_VTNR")
         .unwrap_or_else(|_| "0".to_string())
@@ -95,7 +69,7 @@ pub fn get_issue() -> Option<String> {
             .replace("\\l", &format!("tty{vtnr}"))
             .replace("\\d", &date)
             .replace("\\t", &time)
-            .replace("\\U", &user_count)
+            .replace("\\U", user_count)
             .replace("\\s", cstr_str(uts.sysname()))
             .replace("\\r", cstr_str(uts.release()))
             .replace("\\v", cstr_str(uts.version()))
@@ -115,169 +89,6 @@ pub fn get_issue() -> Option<String> {
     }
 
     None
-}
-
-pub fn get_last_user_username() -> Option<String> {
-    match fs::read_to_string(LAST_USER_USERNAME).ok() {
-        None => None,
-        Some(username) => {
-            let username = username.trim();
-
-            if username.is_empty() {
-                None
-            } else {
-                Some(username.to_string())
-            }
-        }
-    }
-}
-
-pub fn get_last_user_name() -> Option<String> {
-    match fs::read_to_string(LAST_USER_NAME).ok() {
-        None => None,
-        Some(name) => {
-            let name = name.trim();
-
-            if name.is_empty() {
-                None
-            } else {
-                Some(name.to_string())
-            }
-        }
-    }
-}
-
-pub fn write_last_username(username: &MaskedString) {
-    let _ = fs::write(LAST_USER_USERNAME, &username.value);
-
-    if let Some(ref name) = username.mask {
-        let _ = fs::write(LAST_USER_NAME, name);
-    } else {
-        let _ = fs::remove_file(LAST_USER_NAME);
-    }
-}
-
-pub fn get_last_session_path() -> Result<PathBuf, io::Error> {
-    Ok(PathBuf::from(fs::read_to_string(LAST_SESSION)?.trim()))
-}
-
-pub fn get_last_command() -> Result<String, io::Error> {
-    Ok(fs::read_to_string(LAST_COMMAND)?.trim().to_string())
-}
-
-pub fn write_last_session_path<P>(session: &P)
-where
-    P: AsRef<Path>,
-{
-    let _ = fs::write(LAST_SESSION, session.as_ref().to_string_lossy().as_bytes());
-}
-
-pub fn write_last_command(session: &str) {
-    let _ = fs::write(LAST_COMMAND, session);
-}
-
-pub fn get_last_user_session(username: &str) -> Result<PathBuf, io::Error> {
-    Ok(PathBuf::from(
-        fs::read_to_string(format!("{LAST_SESSION}-{username}"))?.trim(),
-    ))
-}
-
-pub fn get_last_user_command(username: &str) -> Result<String, io::Error> {
-    Ok(fs::read_to_string(format!("{LAST_COMMAND}-{username}"))?
-        .trim()
-        .to_string())
-}
-
-pub fn write_last_user_session<P>(username: &str, session: P)
-where
-    P: AsRef<Path>,
-{
-    let _ = fs::write(
-        format!("{LAST_SESSION}-{username}"),
-        session.as_ref().to_string_lossy().as_bytes(),
-    );
-}
-
-pub fn delete_last_session() {
-    let _ = fs::remove_file(LAST_SESSION);
-}
-
-pub fn write_last_user_command(username: &str, session: &str) {
-    let _ = fs::write(format!("{LAST_COMMAND}-{username}"), session);
-}
-
-pub fn delete_last_user_session(username: &str) {
-    let _ = fs::remove_file(format!("{LAST_SESSION}-{username}"));
-}
-
-pub fn delete_last_command() {
-    let _ = fs::remove_file(LAST_COMMAND);
-}
-
-pub fn delete_last_user_command(username: &str) {
-    let _ = fs::remove_file(format!("{LAST_COMMAND}-{username}"));
-}
-
-pub fn get_users(min_uid: u16, max_uid: u16) -> Vec<User> {
-    let users = unsafe { uzers::all_users() };
-
-    let users: Vec<User> = users
-        .filter(|user| user.uid() >= min_uid as u32 && user.uid() <= max_uid as u32)
-        .map(|user| User {
-            username: user.name().to_string_lossy().to_string(),
-            name: match user.gecos() {
-                name if name.is_empty() => None,
-                name => {
-                    let name = name.to_string_lossy();
-
-                    match name.split_once(',') {
-                        Some((name, _)) => Some(name.to_string()),
-                        None => Some(name.to_string()),
-                    }
-                }
-            },
-        })
-        .collect();
-
-    users
-}
-
-pub fn get_min_max_uids(min_uid: Option<u16>, max_uid: Option<u16>) -> (u16, u16) {
-    if let (Some(min_uid), Some(max_uid)) = (min_uid, max_uid) {
-        return (min_uid, max_uid);
-    }
-
-    let overrides = (min_uid, max_uid);
-    let default = (
-        min_uid.unwrap_or(DEFAULT_MIN_UID),
-        max_uid.unwrap_or(DEFAULT_MAX_UID),
-    );
-
-    match File::open("/etc/login.defs") {
-        Err(_) => default,
-        Ok(file) => {
-            let file = BufReader::new(file);
-
-            let uids: (u16, u16) = file.lines().fold(default, |acc, line| {
-                line.map(|line| {
-                    let mut tokens = line.split_whitespace();
-
-                    match (overrides, tokens.next(), tokens.next()) {
-                        ((None, _), Some("UID_MIN"), Some(value)) => {
-                            (value.parse::<u16>().unwrap_or(acc.0), acc.1)
-                        }
-                        ((_, None), Some("UID_MAX"), Some(value)) => {
-                            (acc.0, value.parse::<u16>().unwrap_or(acc.1))
-                        }
-                        _ => acc,
-                    }
-                })
-                .unwrap_or(acc)
-            });
-
-            uids
-        }
-    }
 }
 
 pub fn get_sessions(greeter: &Greeter) -> Result<Vec<Session>, Box<dyn Error>> {

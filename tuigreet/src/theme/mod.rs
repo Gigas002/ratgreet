@@ -4,13 +4,12 @@
 use std::{
     io,
     path::{Path, PathBuf},
-    str::FromStr,
 };
 
-use serde::{Deserialize, Serialize};
 use ratatui::style::Color;
+use serde::{Deserialize, Serialize};
 
-use crate::ui::common::style::Theme;
+use crate::{color::parse_css_color, ui::common::style::Theme};
 
 #[cfg(test)]
 mod tests;
@@ -206,7 +205,7 @@ impl ThemeFile {
 }
 
 fn parse_color(name: &str, value: &str) -> Result<Color, ThemeError> {
-    Color::from_str(value).map_err(|_| ThemeError::InvalidColor {
+    parse_css_color(value).map_err(|_| ThemeError::InvalidColor {
         name: name.to_string(),
         value: value.to_string(),
     })

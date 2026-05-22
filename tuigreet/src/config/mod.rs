@@ -23,10 +23,6 @@ pub struct Config {
     #[serde(default)]
     pub ui: Ui,
     #[serde(default)]
-    pub remember: Remember,
-    #[serde(default)]
-    pub user_menu: UserMenu,
-    #[serde(default)]
     pub secrets: Secrets,
     #[serde(default)]
     pub keybindings: Keybindings,
@@ -97,32 +93,33 @@ pub enum GreetAlign {
     Right,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct Remember {
-    #[serde(default)]
-    pub username: bool,
-    #[serde(default)]
-    pub session: bool,
-    #[serde(default)]
-    pub user_session: bool,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SecretDisplayMode {
+    /// Do not show typed password characters.
+    Hidden,
+    /// Show the password as entered.
+    Plain,
+    /// Mask each character with `mask_char`.
+    #[default]
+    Masked,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct UserMenu {
-    #[serde(default)]
-    pub enabled: bool,
-    #[serde(default = "default_min_uid")]
-    pub min_uid: u16,
-    #[serde(default = "default_max_uid")]
-    pub max_uid: u16,
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Secrets {
     #[serde(default)]
-    pub mask: bool,
+    pub display: SecretDisplayMode,
     #[serde(default = "default_mask_char")]
     pub mask_char: String,
+}
+
+impl Default for Secrets {
+    fn default() -> Self {
+        Self {
+            display: SecretDisplayMode::default(),
+            mask_char: default_mask_char(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,14 +166,6 @@ fn default_container_padding() -> u16 {
 
 fn default_prompt_padding() -> u16 {
     1
-}
-
-fn default_min_uid() -> u16 {
-    1000
-}
-
-fn default_max_uid() -> u16 {
-    60000
 }
 
 fn default_mask_char() -> String {
@@ -319,8 +308,6 @@ impl Default for Config {
             logging: Logging::default(),
             session: Session::default(),
             ui: Ui::default(),
-            remember: Remember::default(),
-            user_menu: UserMenu::default(),
             secrets: Secrets::default(),
             keybindings: Keybindings::default(),
             power: Power::default(),
@@ -376,28 +363,12 @@ impl Config {
             ));
         }
 
-        if self.remember.session && self.remember.user_session {
+        if self.secrets.display == SecretDisplayMode::Masked
+            && self.secrets.mask_char.chars().count() != 1
+        {
             return Err(ConfigError::Validation(
-                "only one of [remember].session and [remember].user_session may be enabled".into(),
-            ));
-        }
-
-        if self.remember.user_session && !self.remember.username {
-            return Err(ConfigError::Validation(
-                "[remember].user_session requires [remember].username".into(),
-            ));
-        }
-
-        if self.user_menu.enabled && self.user_menu.min_uid >= self.user_menu.max_uid {
-            return Err(ConfigError::Validation(format!(
-                "[user_menu].min_uid ({}) must be less than [user_menu].max_uid ({})",
-                self.user_menu.min_uid, self.user_menu.max_uid
-            )));
-        }
-
-        if self.secrets.mask && self.secrets.mask_char.is_empty() {
-            return Err(ConfigError::Validation(
-                "[secrets].mask_char must have at least one character".into(),
+                "[secrets].mask_char must be exactly one character when display = \"masked\""
+                    .into(),
             ));
         }
 

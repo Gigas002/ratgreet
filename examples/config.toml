@@ -24,18 +24,9 @@ show_time = false
 # greeting = "Welcome"
 issue = false
 
-[remember]
-username = false
-session = false
-user_session = false
-
-[user_menu]
-enabled = false
-min_uid = 1000
-max_uid = 60000
-
 [secrets]
-mask = false
+# display: "hidden" | "plain" | "masked" (default: masked)
+# display = "masked"
 mask_char = "*"
 
 [keybindings]

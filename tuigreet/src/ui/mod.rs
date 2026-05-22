@@ -14,7 +14,6 @@ use std::{
 
 use chrono::prelude::*;
 use libtuigreet::{Greeter, Mode, info::capslock_status, model::sessions::SessionSource};
-use tokio::sync::RwLock;
 use ratatui::{
     Terminal,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -22,6 +21,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::Paragraph,
 };
+use tokio::sync::RwLock;
 use util::buttonize;
 
 use crate::ui::util::should_hide_cursor;
@@ -139,10 +139,6 @@ where
             Mode::Power => {
                 use common::menu::DrawMenu;
                 greeter.powers.draw(&greeter, theme, f).ok()
-            }
-            Mode::Users => {
-                use common::menu::DrawMenu;
-                greeter.users.draw(&greeter, theme, f).ok()
             }
             Mode::Processing => self::processing::draw(&mut greeter, theme, f).ok(),
             _ => self::prompt::draw(&mut greeter, theme, f).ok(),

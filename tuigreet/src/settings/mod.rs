@@ -34,8 +34,6 @@ pub struct Settings {
     pub logging: LoggingSettings,
     pub session: SessionSettings,
     pub ui: UiSettings,
-    pub remember: RememberSettings,
-    pub user_menu: UserMenuSettings,
     pub secrets: SecretsSettings,
     pub keybindings: KeybindingsSettings,
     pub power: PowerSettings,
@@ -81,24 +79,10 @@ pub struct UiSettings {
     pub greeting: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-pub struct RememberSettings {
-    pub username: bool,
-    pub session: bool,
-    pub user_session: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct UserMenuSettings {
-    pub enabled: bool,
-    pub min_uid: u16,
-    pub max_uid: u16,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SecretsSettings {
-    pub mask: bool,
-    pub mask_char: String,
+    pub display: crate::config::SecretDisplayMode,
+    pub mask_char: char,
 }
 
 #[derive(Debug, Clone)]
@@ -187,19 +171,9 @@ impl Settings {
                 issue: config.ui.issue,
                 greeting: config.ui.greeting,
             },
-            remember: RememberSettings {
-                username: config.remember.username,
-                session: config.remember.session,
-                user_session: config.remember.user_session,
-            },
-            user_menu: UserMenuSettings {
-                enabled: config.user_menu.enabled,
-                min_uid: config.user_menu.min_uid,
-                max_uid: config.user_menu.max_uid,
-            },
             secrets: SecretsSettings {
-                mask: config.secrets.mask,
-                mask_char: config.secrets.mask_char,
+                display: config.secrets.display,
+                mask_char: config.secrets.mask_char.chars().next().unwrap_or('*'),
             },
             keybindings: KeybindingsSettings {
                 command: config.keybindings.command,

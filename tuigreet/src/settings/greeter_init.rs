@@ -1,19 +1,16 @@
 use libtuigreet::{
     event::Event,
     greeter::{GreetAlign, Greeter, SecretDisplay},
-    info::{
-        get_issue, get_last_command, get_last_session_path, get_last_user_command,
-        get_last_user_name, get_last_user_session, get_last_user_username, get_min_max_uids,
-        get_sessions, get_users,
-    },
+    info::{get_issue, get_sessions},
     model::{
-        masked::MaskedString,
         menu::Menu,
         power_item::Power,
-        sessions::{Session, SessionSource, SessionType},
+        sessions::{SessionSource, SessionType},
     },
     power::PowerOption,
 };
+
+use crate::config::SecretDisplayMode;
 use tokio::sync::mpsc::Sender;
 
 use crate::ui::strings;
@@ -73,46 +70,6 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
         selected: 0,
     };
 
-    if greeter.remember
-        && let Some(username) = get_last_user_username()
-    {
-        greeter.username = MaskedString::from(username, get_last_user_name());
-
-        if greeter.remember_user_session {
-            if let Ok(command) = get_last_user_command(greeter.username.get()) {
-                greeter.session_source = SessionSource::Command(command);
-            }
-
-            if let Ok(ref session_path) = get_last_user_session(greeter.username.get())
-                && let Some(index) = greeter
-                    .sessions
-                    .options
-                    .iter()
-                    .position(|Session { path, .. }| path.as_deref() == Some(session_path))
-            {
-                greeter.sessions.selected = index;
-                greeter.session_source = SessionSource::Session(greeter.sessions.selected);
-            }
-        }
-    }
-
-    if greeter.remember_session {
-        if let Ok(command) = get_last_command() {
-            greeter.session_source = SessionSource::Command(command.trim().to_string());
-        }
-
-        if let Ok(ref session_path) = get_last_session_path()
-            && let Some(index) = greeter
-                .sessions
-                .options
-                .iter()
-                .position(|Session { path, .. }| path.as_deref() == Some(session_path))
-        {
-            greeter.sessions.selected = index;
-            greeter.session_source = SessionSource::Session(greeter.sessions.selected);
-        }
-    }
-
     greeter
 }
 
@@ -128,38 +85,16 @@ fn apply_config(greeter: &mut Greeter, settings: &Settings) {
     greeter.prompt_padding = settings.ui.prompt_padding;
     greeter.greet_align = settings.ui.greet_align.into();
 
-    if settings.secrets.mask {
-        greeter.secret_display = SecretDisplay::Character(settings.secrets.mask_char.clone());
-    } else {
-        greeter.secret_display = SecretDisplay::Hidden;
-    }
+    greeter.secret_display = match settings.secrets.display {
+        SecretDisplayMode::Hidden => SecretDisplay::Hidden,
+        SecretDisplayMode::Plain => SecretDisplay::Plain,
+        SecretDisplayMode::Masked => SecretDisplay::Masked(settings.secrets.mask_char),
+    };
 
     if settings.ui.issue {
         greeter.greeting = get_issue();
     } else {
         greeter.greeting = settings.ui.greeting.clone();
-    }
-
-    greeter.remember = settings.remember.username;
-    greeter.remember_session = settings.remember.session;
-    greeter.remember_user_session = settings.remember.user_session;
-
-    greeter.user_menu = settings.user_menu.enabled;
-    if settings.user_menu.enabled {
-        let (min_uid, max_uid) = get_min_max_uids(
-            Some(settings.user_menu.min_uid),
-            Some(settings.user_menu.max_uid),
-        );
-
-        tracing::info!("min/max UIDs are {}/{}", min_uid, max_uid);
-
-        greeter.users = Menu {
-            title: strings::get("title_users"),
-            options: get_users(min_uid, max_uid),
-            selected: 0,
-        };
-
-        tracing::info!("found {} users", greeter.users.options.len());
     }
 
     greeter.session_paths = settings

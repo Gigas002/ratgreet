@@ -3,16 +3,13 @@ name = "libtuigreet"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-publish = false
 
 [features]
 test-harness = []
 
 [dependencies]
-smart-default = "0.7"
 chrono.workspace = true
 crossterm.workspace = true
-futures = "0.3"
 greetd_ipc.workspace = true
 rustix.workspace = true
 rust-ini = "0.21"
@@ -23,10 +20,8 @@ tokio = { workspace = true, features = [
   "process",
 ] }
 zeroize = "1"
-uzers = "0.12"
 tracing-appender.workspace = true
 tracing.workspace = true
-utmp-rs = "0.3"
 
 [dev-dependencies]
 tempfile.workspace = true

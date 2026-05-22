@@ -1,9 +1,6 @@
 //! Core greeter: greetd IPC, session discovery, greeter state, keyboard, events.
 
 #[macro_use]
-extern crate smart_default;
-
-#[macro_use]
 mod macros;
 
 mod strings;

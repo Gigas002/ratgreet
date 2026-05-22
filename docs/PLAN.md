@@ -10,7 +10,7 @@ Reference plan:
 
 **Example artifacts** (schemas + minimal CLI) live under `examples/`:
 
-- `examples/config.toml` — greetd paths, sessions, remember/cache, layout, power, keybindings, logging
+- `examples/config.toml` — greetd paths, sessions, layout, power, keybindings, logging
 - `examples/theme.toml` — TUI colors and style overrides
 - `examples/cli.md` — retained CLI surface (help, version, config/theme paths, debug)
 
@@ -26,7 +26,7 @@ Reference plan:
   - **`tests/`** — **`tuigreet-tests`** package: greetd-stub integration tests only; depends on **`libtuigreet`** (not on in-process hacks inside the binary crate). **Not** released to users.
   - Splitting **`libtuigreet`** is required so integration tests can live outside `tuigreet/src/` without a misnamed `src/integration/` tree — today’s harness calls `Greeter`, `Events`, and the test backend in-process.
 - **Configuration-first UX**:
-  - **`config.toml`**: everything operators configure today via long CLI flags (sessions, remember, user menu, layout, power commands, keybindings, default command, wrappers, logging).
+  - **`config.toml`**: everything operators configure today via long CLI flags (sessions, layout, power commands, keybindings, default command, wrappers, logging).
   - **`theme.toml`**: visual styling only (replaces `--theme` semicolon string).
   - **Minimal CLI**: `--help`, `--version`, `--config`, `--theme`, optional `--debug` — no duplicate knobs on the command line.
 - **English-only UI**: drop Fluent/i18n embedding; user-visible strings live in one small module (constants or a tiny `strings` table).
@@ -258,19 +258,9 @@ time_format = "%c"
 issue = false           # mutually exclusive with greeting
 greeting = "Welcome"
 
-[remember]
-username = false
-session = false
-user_session = false
-
-[user_menu]
-enabled = false
-min_uid = 1000
-max_uid = 60000
-
 [secrets]
-mask = false            # was --asterisks
-mask_char = "*"
+display = "masked"      # hidden | plain | masked (default; was --asterisks)
+mask_char = "*"         # single character when display = "masked"
 
 [keybindings]
 command = 2
@@ -426,8 +416,8 @@ Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 | `--sessions`, `--xsessions`, wrappers              | `[session]`                        |
 | `--width`, `*-padding`, `--greet-align`            | `[ui]`                             |
 | `--issue`, `--greeting`, `--time`, `--time-format` | `[ui]`                             |
-| `--remember*`                                      | `[remember]`                       |
-| `--user-menu*`                                     | `[user_menu]`                      |
+| `--remember*`                                      | removed (manual login every time)  |
+| `--user-menu*`                                     | removed (manual username entry)    |
 | `--asterisks*`                                     | `[secrets]`                        |
 | `--theme`                                          | `theme.toml` / `--theme` path only |
 | `--power-*`, `--kb-*`                              | `[power]`, `[keybindings]`         |
@@ -470,4 +460,4 @@ When example shapes change, update `examples/*.toml` and `examples/cli.md` in th
 | 2026-05-22 | Plan: Phase 3 adds **`libtuigreet`** + thin **`tuigreet`** binary + **`tests/`** so integration harness can link without `src/integration/`                |
 | 2026-05-22 | Phase 2 complete: `clap` minimal CLI, `Settings` wired in `main`, removed `getopts` / `Greeter::options()`                                                 |
 | 2026-05-22 | Phase 3 complete: workspace split `libtuigreet` + `tuigreet` + `tests`; integration harness in `tuigreet-tests`; `test-harness` feature for stub runs   |
-| 2026-05-22 | Phase 4 complete: edition 2024 workspace; rustix 1.x; ratatui 0.30 / crossterm 0.29 / ansi-to-tui 8 / toml 0.9 / thiserror 2; §4 gates green locally   |
+| 2026-05-22 | Phase 4 complete: edition 2024 workspace; rustix 1.x; ratatui 0.30 / crossterm 0.29 / toml 1.1 / thiserror 2; theme CSS hex colors; §4 gates green locally   |

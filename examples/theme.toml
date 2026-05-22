@@ -1,4 +1,5 @@
 # Example theme for tuigreet (see docs/PLAN.md §3.2)
+# Colors: named ANSI (blue, cyan, …) or CSS hex (#rgb, #rrggbb, #rrggbbaa).
 
 [colors]
 container = "blue"

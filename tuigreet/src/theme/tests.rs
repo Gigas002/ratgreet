@@ -21,6 +21,20 @@ fn example_theme_converts_to_ui_theme() {
 }
 
 #[test]
+fn accepts_css_hex_with_alpha() {
+    let theme = parse(
+        r##"
+[colors]
+container = "#ffffff00"
+"##,
+    )
+    .unwrap();
+    let ui = theme.to_ui_theme().unwrap();
+    let style = ui.of(&[crate::ui::common::style::Themed::Container]);
+    assert_eq!(style.bg, Some(ratatui::style::Color::Rgb(255, 255, 255)));
+}
+
+#[test]
 fn rejects_invalid_color() {
     let err = parse(
         r#"

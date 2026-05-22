@@ -106,7 +106,7 @@ async fn escape() {
         assert_eq!(status.cursor_offset, 0);
     }
 
-    for mode in [Mode::Users, Mode::Sessions, Mode::Power] {
+    for mode in [Mode::Sessions, Mode::Power] {
         {
             let mut greeter = greeter.write().await;
             greeter.previous_mode = Mode::Username;
@@ -195,7 +195,7 @@ async fn f2() {
         assert_eq!(status.buffer, "thecommand".to_string());
     }
 
-    for mode in [Mode::Users, Mode::Sessions, Mode::Power] {
+    for mode in [Mode::Sessions, Mode::Power] {
         {
             let mut greeter = greeter.write().await;
             greeter.previous_mode = Mode::Username;
@@ -248,7 +248,7 @@ async fn f_menu() {
             assert_eq!(status.buffer, "apognu".to_string());
         }
 
-        for mode in [Mode::Users, Mode::Sessions, Mode::Power] {
+        for mode in [Mode::Sessions, Mode::Power] {
             {
                 let mut greeter = greeter.write().await;
                 greeter.previous_mode = Mode::Username;
@@ -305,7 +305,7 @@ async fn f_menu_rebinded() {
             assert_eq!(status.buffer, "apognu".to_string());
         }
 
-        for mode in [Mode::Users, Mode::Sessions, Mode::Power] {
+        for mode in [Mode::Sessions, Mode::Power] {
             {
                 let mut greeter = greeter.write().await;
                 greeter.previous_mode = Mode::Username;

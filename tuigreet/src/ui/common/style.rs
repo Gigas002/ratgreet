@@ -1,6 +1,6 @@
-use std::str::FromStr;
-
 use ratatui::style::{Color, Style};
+
+use crate::color::parse_css_color;
 
 #[derive(Clone)]
 enum Component {
@@ -45,7 +45,7 @@ impl Theme {
         let mut style = Theme::default();
 
         for (key, value) in directives {
-            if let Ok(color) = Color::from_str(value) {
+            if let Ok(color) = parse_css_color(value) {
                 match key {
                     "container" => style.container = Some((Bg, color)),
                     "time" => style.time = Some((Fg, color)),

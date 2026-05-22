@@ -12,5 +12,3 @@ mod exit;
 mod menus;
 #[cfg(test)]
 mod movement;
-#[cfg(test)]
-mod remember;
