@@ -29,7 +29,7 @@ time_format = "%c"
 # greeting = "Welcome" uses fixed custom text.
 # If both are off, no banner is shown.
 issue = true
-greeting = "Welcome"
+# greeting = "Welcome"
 
 # ---------------------------------------------------------------------------
 # Colors: semantic UI roles
