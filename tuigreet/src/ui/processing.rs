@@ -8,7 +8,7 @@ use ratatui::{
 
 use libtuigreet::Greeter;
 
-use crate::ui::{Frame, common::style::Theme, util::*};
+use crate::ui::{Frame, common::style::Theme, strings, util::*};
 
 pub fn draw(
     greeter: &mut Greeter,
@@ -41,7 +41,7 @@ pub fn draw(
         .direction(Direction::Vertical)
         .constraints(constraints.as_ref())
         .split(frame);
-    let text = Span::from(fl!("wait"));
+    let text = Span::from(strings::get("wait"));
     let paragraph = Paragraph::new(text).alignment(Alignment::Center);
 
     f.render_widget(paragraph, chunks[0]);

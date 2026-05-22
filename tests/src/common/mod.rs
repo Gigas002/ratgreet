@@ -26,8 +26,8 @@ use libtuigreet::{
     model::sessions::SessionSource,
 };
 use tuigreet::{
-    app,
-    settings::{CliOverrides, Settings, init_greeter},
+    app::{self, init_greeter},
+    settings::{CliOverrides, Settings},
 };
 
 pub(super) use self::{

@@ -8,12 +8,8 @@ use crate::{
     ui::common::style::Theme,
 };
 
-mod greeter_init;
-
 #[cfg(test)]
 mod tests;
-
-pub use greeter_init::init_greeter;
 
 /// CLI overrides parsed by `clap` in `main`.
 #[derive(Debug, Default, Clone)]
@@ -110,9 +106,14 @@ pub enum SettingsError {
 
 impl Settings {
     pub fn load(cli: &CliOverrides) -> Result<Self, SettingsError> {
-        let config = config::load_layered(cli.config.as_deref())?;
-        let theme_file = theme::load_layered(cli.theme.as_deref())?;
-        let theme = theme_file.to_ui_theme()?;
+        let config = config::load_layered(cli.config.as_deref());
+        let theme_file = theme::load_layered(cli.theme.as_deref());
+        let theme = theme_file.to_ui_theme().unwrap_or_else(|err| {
+            tracing::warn!("theme conversion failed ({err}); using built-in defaults");
+            theme::ThemeFile::default()
+                .to_ui_theme()
+                .expect("default theme is always valid")
+        });
 
         let config_path = resolved_config_path(cli.config.as_deref());
         let theme_path = resolved_theme_path(cli.theme.as_deref());

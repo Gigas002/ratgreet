@@ -19,7 +19,7 @@ async fn main() {
     let theme = settings.theme.clone();
     let backend = CrosstermBackend::new(io::stdout());
     let events = Events::new().await;
-    let greeter = settings::init_greeter(events.sender(), &settings).await;
+    let greeter = app::init_greeter(events.sender(), &settings).await;
 
     if let Err(error) = app::run(backend, greeter, theme, events).await {
         if let Some(AuthStatus::Success) = error.downcast_ref::<AuthStatus>() {

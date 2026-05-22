@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::*;
 use crate::config::{GreetAlign, LogLevel};
 
@@ -45,6 +47,26 @@ fn load_from_explicit_config_and_theme_paths() {
         settings.session.xsession_wrapper.as_deref(),
         Some(crate::config::DEFAULT_XSESSION_WRAPPER)
     );
+}
+
+#[test]
+fn bad_explicit_config_path_falls_back_to_defaults() {
+    let cli = CliOverrides {
+        config: Some(PathBuf::from("/nonexistent/tuigreet/config.toml")),
+        ..CliOverrides::default()
+    };
+    let settings = Settings::load(&cli).unwrap();
+    assert_eq!(settings.ui.width, 80);
+}
+
+#[test]
+fn bad_explicit_theme_path_falls_back_to_defaults() {
+    let cli = CliOverrides {
+        theme: Some(PathBuf::from("/nonexistent/tuigreet/theme.toml")),
+        ..CliOverrides::default()
+    };
+    let settings = Settings::load(&cli).unwrap();
+    assert_eq!(settings.ui.width, 80);
 }
 
 #[test]

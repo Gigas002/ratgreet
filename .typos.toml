@@ -1,5 +1,5 @@
 [files]
-extend-exclude = ["Cargo.lock", "docs/images/*.png", "wau/**"]
+extend-exclude = ["Cargo.lock"]
 
 [default.extend-words]
 # greetd / PAM / Unix jargon

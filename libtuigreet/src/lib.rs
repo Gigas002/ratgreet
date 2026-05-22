@@ -1,8 +1,5 @@
 //! Core greeter: greetd IPC, session discovery, greeter state, keyboard, events.
 
-#[macro_use]
-mod macros;
-
 mod strings;
 
 pub mod event;

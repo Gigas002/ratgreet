@@ -2,7 +2,7 @@ use std::{process::Stdio, sync::Arc};
 
 use tokio::{process::Command, sync::RwLock};
 
-use crate::{Greeter, Mode, event::Event, model::power_item::Power};
+use crate::{Greeter, Mode, event::Event, model::power_item::Power, strings};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum PowerOption {
@@ -82,14 +82,14 @@ pub async fn run(greeter: &Arc<RwLock<Greeter>>, mut command: Command) -> PowerP
         Ok(result) => match (result.status, result.stderr) {
             (status, _) if status.success() => None,
             (status, output) => {
-                let status = format!("{} {status}", fl!("command_exited"));
+                let status = format!("{} {status}", strings::get("command_exited"));
                 let output = String::from_utf8(output).unwrap_or_default();
 
                 Some(format!("{status}\n{output}"))
             }
         },
 
-        Err(err) => Some(format!("{}: {err}", fl!("command_failed"))),
+        Err(err) => Some(format!("{}: {err}", strings::get("command_failed"))),
     };
 
     tracing::info!("power command exited with: {:?}", message);

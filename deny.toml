@@ -9,7 +9,6 @@ allow = [
     "GPL-3.0-only",
     "GPL-3.0-or-later",
     "Zlib",
-    "BSD-2-Clause",
     "CC0-1.0",
 ]
 confidence-threshold = 0.8

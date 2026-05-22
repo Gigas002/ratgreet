@@ -94,22 +94,45 @@ pub fn load_if_exists(path: &Path) -> Result<Option<ThemeFile>, ThemeError> {
     }
 }
 
-pub fn load_layered(override_path: Option<&Path>) -> Result<ThemeFile, ThemeError> {
-    if let Some(path) = override_path {
-        return load(path);
+/// Merges theme file(s) over built-in defaults.
+///
+/// Missing, unreadable, invalid, or empty files are skipped with a warning; the
+/// result is always a valid [`ThemeFile`] (built-in defaults at minimum).
+pub fn load_layered(override_path: Option<&Path>) -> ThemeFile {
+    let Ok(mut value) = theme_as_value(&ThemeFile::default()) else {
+        tracing::warn!("failed to serialize default theme; using struct defaults");
+        return ThemeFile::default();
+    };
+
+    let paths: Vec<PathBuf> = match override_path {
+        Some(path) => vec![path.to_path_buf()],
+        None => vec![system_path(), user_path()],
+    };
+
+    for path in paths {
+        merge_theme_layer(&mut value, &path);
     }
 
-    let mut value = theme_as_value(&ThemeFile::default())?;
+    value_from_toml(value)
+        .ok()
+        .filter(|theme| theme.validate().is_ok())
+        .unwrap_or_else(|| {
+            tracing::warn!("merged theme is invalid; using built-in defaults");
+            ThemeFile::default()
+        })
+}
 
-    for path in [system_path(), user_path()] {
-        if let Some(layer) = load_if_exists(&path)? {
-            merge_toml(&mut value, theme_as_value(&layer)?);
-        }
+fn merge_theme_layer(base: &mut toml::Value, path: &Path) {
+    match load_if_exists(path) {
+        Ok(Some(layer)) => match theme_as_value(&layer) {
+            Ok(overlay) => merge_toml(base, overlay),
+            Err(err) => {
+                tracing::warn!(path = %path.display(), "ignoring theme layer: {err}");
+            }
+        },
+        Ok(None) => {}
+        Err(err) => tracing::warn!(path = %path.display(), "ignoring theme layer: {err}"),
     }
-
-    let theme: ThemeFile = value_from_toml(value)?;
-    theme.validate()?;
-    Ok(theme)
 }
 
 fn theme_as_value(theme: &ThemeFile) -> Result<toml::Value, ThemeError> {

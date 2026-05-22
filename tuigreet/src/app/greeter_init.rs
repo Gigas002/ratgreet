@@ -9,13 +9,11 @@ use libtuigreet::{
     },
     power::PowerOption,
 };
-
-use crate::config::SecretDisplayMode;
 use tokio::sync::mpsc::Sender;
 
+use crate::config::SecretDisplayMode;
+use crate::settings::{SessionKind, Settings};
 use crate::ui::strings;
-
-use super::{SessionKind, Settings};
 
 impl From<crate::config::GreetAlign> for GreetAlign {
     fn from(value: crate::config::GreetAlign) -> Self {

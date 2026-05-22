@@ -19,6 +19,10 @@ use crossterm::terminal::{EnterAlternateScreen, enable_raw_mode};
 
 use crate::ui::common::style::Theme;
 
+mod greeter_init;
+
+pub use greeter_init::init_greeter;
+
 pub async fn run<B>(
     backend: B,
     greeter: Greeter,

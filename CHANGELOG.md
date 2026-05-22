@@ -17,7 +17,7 @@
 - `[secrets]`: `display` (`hidden` / `plain` / `masked`, default **masked**) replaces `mask`; `mask_char` is a single character when masked.
 - **libtuigreet**: dropped `smart-default`, `futures`, `uzers`, `utmp-rs`; user menu reads `/etc/passwd` via **rustix**; event loop uses crossterm `poll`/`read`; `/etc/issue` `\U` is no longer live-counted.
 - CI workflows use a single default build/test/clippy matrix (no optional feature flags).
-- README screenshots live under `docs/images/`.
+- Removed bundled README screenshots (`docs/images/`).
 
 ### Removed
 

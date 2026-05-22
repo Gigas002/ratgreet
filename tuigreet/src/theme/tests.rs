@@ -52,3 +52,19 @@ fn example_theme_file_on_disk() {
     let theme = load(&path).unwrap();
     theme.to_ui_theme().unwrap();
 }
+
+#[test]
+fn load_layered_missing_override_uses_defaults() {
+    let theme = load_layered(Some(Path::new("/nonexistent/tuigreet/theme.toml")));
+    assert!(theme.colors.container.is_none());
+}
+
+#[test]
+fn load_layered_invalid_override_uses_defaults() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("theme.toml");
+    std::fs::write(&path, "[colors]\ncontainer = \"not-a-color\"\n").unwrap();
+
+    let theme = load_layered(Some(&path));
+    assert!(theme.colors.container.is_none());
+}

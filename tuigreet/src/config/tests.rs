@@ -84,6 +84,32 @@ fn load_returns_not_found() {
 }
 
 #[test]
+fn load_layered_missing_override_uses_defaults() {
+    let cfg = load_layered(Some(Path::new("/nonexistent/tuigreet/config.toml")));
+    assert_eq!(cfg.ui.width, Config::default().ui.width);
+}
+
+#[test]
+fn load_layered_invalid_override_uses_defaults() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.toml");
+    std::fs::write(&path, "not valid toml [[[").unwrap();
+
+    let cfg = load_layered(Some(&path));
+    assert_eq!(cfg.ui.width, Config::default().ui.width);
+}
+
+#[test]
+fn load_layered_empty_file_uses_defaults() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.toml");
+    std::fs::write(&path, "").unwrap();
+
+    let cfg = load_layered(Some(&path));
+    assert_eq!(cfg.ui.width, 80);
+}
+
+#[test]
 fn example_config_file_on_disk() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/config.toml");
     let cfg = load(&path).unwrap();

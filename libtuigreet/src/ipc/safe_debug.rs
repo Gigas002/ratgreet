@@ -14,7 +14,3 @@ impl SafeDebug for Request {
         }
     }
 }
-
-macro_rules! fl {
-    ($message_id:literal) => {{ $crate::strings::get($message_id) }};
-}

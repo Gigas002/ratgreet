@@ -1,14 +1,36 @@
-# Example theme for tuigreet (see docs/PLAN.md §3.2)
-# Colors: named ANSI (blue, cyan, …) or CSS hex (#rgb, #rrggbb, #rrggbbaa).
+# tuigreet theme
+#
+# Install as /etc/tuigreet/theme.toml or ~/.config/tuigreet/theme.toml.
+# Resolution: built-in defaults → /etc → XDG user → --theme PATH (see examples/cli.md).
+#
+# Each [colors] entry is a semantic UI role. Values may be:
+#   - Named ANSI colors: blue, cyan, red, white, … (ratatui names)
+#   - CSS-like hex: #rgb, #rrggbb, #rrggbbaa (alpha is parsed but not shown in the TTY)
+#
+# Omitted roles use built-in terminal styling. Some roles inherit from others when unset:
+#   time   → text
+#   greet  → text
+#   title  → border
+#   button → action
 
 [colors]
+# Background of the login / menu boxes
 container = "blue"
+# Top-of-screen clock (when [ui].show_time = true)
 time = "white"
+# Default foreground
 text = "white"
+# Box borders
 border = "cyan"
+# Box title bar ("Authenticate into …", etc.)
 title = "cyan"
+# /etc/issue or [ui].greeting banner
 greet = "white"
+# Labels: "Username:", "New command:", …
 prompt = "white"
+# Typed username, password, command
 input = "white"
+# Status bar action names
 action = "yellow"
+# Status bar F-key hints
 button = "yellow"

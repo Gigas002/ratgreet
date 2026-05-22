@@ -9,7 +9,7 @@ use ratatui::{
 use crate::ui::{
     Frame,
     common::style::{Theme, Themed},
-    prompt_value,
+    prompt_value, strings,
     util::*,
 };
 use libtuigreet::{
@@ -45,10 +45,7 @@ pub fn draw(
         height - (2 * container_padding),
     );
 
-    let hostname = Span::from(titleize(&fl!(
-        "title_authenticate",
-        hostname = get_hostname()
-    )));
+    let hostname = Span::from(titleize(&strings::title_authenticate(&get_hostname())));
     let block = Block::default()
         .title(hostname)
         .title_style(theme.of(&[Themed::Title]))
@@ -89,7 +86,7 @@ pub fn draw(
         f.render_widget(greeting_label, chunks[GREETING_INDEX]);
     }
 
-    let username_text = prompt_value(theme, Some(fl!("username")));
+    let username_text = prompt_value(theme, Some(strings::get("username")));
     let username_label = Paragraph::new(username_text);
 
     let username = greeter.username.get();
@@ -103,15 +100,15 @@ pub fn draw(
             f.render_widget(
                 username_value,
                 Rect::new(
-                    1 + chunks[USERNAME_INDEX].x + fl!("username").chars().count() as u16,
+                    1 + chunks[USERNAME_INDEX].x + strings::get("username").chars().count() as u16,
                     chunks[USERNAME_INDEX].y,
-                    get_input_width(greeter, width, &Some(fl!("username"))),
+                    get_input_width(greeter, width, &Some(strings::get("username"))),
                     1,
                 ),
             );
 
             let answer_text = if greeter.working {
-                Span::from(fl!("wait"))
+                Span::from(strings::get("wait"))
             } else {
                 prompt_value(theme, greeter.prompt.as_ref())
             };
@@ -166,7 +163,7 @@ pub fn draw(
             let offset = get_cursor_offset(greeter, username_length);
 
             Ok((
-                2 + cursor.x + fl!("username").chars().count() as u16 + offset as u16,
+                2 + cursor.x + strings::get("username").chars().count() as u16 + offset as u16,
                 USERNAME_INDEX as u16 + cursor.y,
             ))
         }

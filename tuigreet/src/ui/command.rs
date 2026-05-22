@@ -11,7 +11,7 @@ use libtuigreet::Greeter;
 use crate::ui::{
     Frame,
     common::style::{Theme, Themed},
-    prompt_value,
+    prompt_value, strings,
     util::*,
 };
 
@@ -34,7 +34,7 @@ pub fn draw(
     );
 
     let block = Block::default()
-        .title(titleize(&fl!("title_command")))
+        .title(titleize(&strings::get("title_command")))
         .title_style(theme.of(&[Themed::Title]))
         .style(theme.of(&[Themed::Container]))
         .borders(Borders::ALL)
@@ -53,7 +53,7 @@ pub fn draw(
         .split(frame);
     let cursor = chunks[0];
 
-    let command_label_text = prompt_value(theme, Some(fl!("new_command")));
+    let command_label_text = prompt_value(theme, Some(strings::get("new_command")));
     let command_label = Paragraph::new(command_label_text).style(theme.of(&[Themed::Prompt]));
     let command_value_text = Span::from(&greeter.buffer);
     let command_value = Paragraph::new(command_value_text).style(theme.of(&[Themed::Input]));
@@ -62,9 +62,9 @@ pub fn draw(
     f.render_widget(
         command_value,
         Rect::new(
-            1 + chunks[0].x + fl!("new_command").chars().count() as u16,
+            1 + chunks[0].x + strings::get("new_command").chars().count() as u16,
             chunks[0].y,
-            get_input_width(greeter, width, &Some(fl!("new_command"))),
+            get_input_width(greeter, width, &Some(strings::get("new_command"))),
             1,
         ),
     );
@@ -73,7 +73,7 @@ pub fn draw(
     let offset = get_cursor_offset(greeter, new_command.chars().count());
 
     Ok((
-        2 + cursor.x + fl!("new_command").chars().count() as u16 + offset as u16,
+        2 + cursor.x + strings::get("new_command").chars().count() as u16 + offset as u16,
         cursor.y + 1,
     ))
 }

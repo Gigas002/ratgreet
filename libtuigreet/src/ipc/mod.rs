@@ -9,9 +9,12 @@ use tokio::sync::{
 use crate::{
     AuthStatus, Greeter, Mode,
     event::Event,
-    macros::SafeDebug,
     model::sessions::{Session, SessionType},
+    strings,
 };
+
+mod safe_debug;
+use safe_debug::SafeDebug;
 
 #[derive(Clone)]
 pub struct Ipc(Arc<IpcHandle>);
@@ -145,14 +148,14 @@ impl Ipc {
                         None => {
                             Ipc::cancel(greeter).await;
 
-                            greeter.message = Some(fl!("command_missing"));
+                            greeter.message = Some(strings::get("command_missing"));
                             greeter.reset(false).await;
                         }
 
                         Some(command) if command.is_empty() => {
                             Ipc::cancel(greeter).await;
 
-                            greeter.message = Some(fl!("command_missing"));
+                            greeter.message = Some(strings::get("command_missing"));
                             greeter.reset(false).await;
                         }
 
@@ -194,7 +197,7 @@ impl Ipc {
 
                 match error_type {
                     ErrorType::AuthError => {
-                        greeter.message = Some(fl!("failed"));
+                        greeter.message = Some(strings::get("failed"));
                         self.send(Request::CreateSession {
                             username: greeter.username.value.clone(),
                         })

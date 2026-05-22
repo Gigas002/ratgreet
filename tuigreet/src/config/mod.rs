@@ -249,23 +249,45 @@ pub fn load_if_exists(path: &Path) -> Result<Option<Config>, ConfigError> {
     }
 }
 
-/// Merges system and user config files over built-in defaults.
-pub fn load_layered(override_path: Option<&Path>) -> Result<Config, ConfigError> {
-    if let Some(path) = override_path {
-        return load(path);
+/// Merges config file(s) over built-in defaults.
+///
+/// Missing, unreadable, invalid, or empty files are skipped with a warning; the
+/// result is always a valid [`Config`] (built-in defaults at minimum).
+pub fn load_layered(override_path: Option<&Path>) -> Config {
+    let Ok(mut value) = config_as_value(&Config::default()) else {
+        tracing::warn!("failed to serialize default config; using struct defaults");
+        return Config::default();
+    };
+
+    let paths: Vec<PathBuf> = match override_path {
+        Some(path) => vec![path.to_path_buf()],
+        None => vec![system_path(), user_path()],
+    };
+
+    for path in paths {
+        merge_config_layer(&mut value, &path);
     }
 
-    let mut value = config_as_value(&Config::default())?;
+    value_from_toml(value)
+        .ok()
+        .filter(|config| config.validate().is_ok())
+        .unwrap_or_else(|| {
+            tracing::warn!("merged config is invalid; using built-in defaults");
+            Config::default()
+        })
+}
 
-    for path in [system_path(), user_path()] {
-        if let Some(layer) = load_if_exists(&path)? {
-            merge_toml(&mut value, config_as_value(&layer)?);
-        }
+fn merge_config_layer(base: &mut toml::Value, path: &Path) {
+    match load_if_exists(path) {
+        Ok(Some(layer)) => match config_as_value(&layer) {
+            Ok(overlay) => merge_toml(base, overlay),
+            Err(err) => {
+                tracing::warn!(path = %path.display(), "ignoring config layer: {err}");
+            }
+        },
+        Ok(None) => {}
+        Err(err) => tracing::warn!(path = %path.display(), "ignoring config layer: {err}"),
     }
-
-    let config: Config = value_from_toml(value)?;
-    config.validate()?;
-    Ok(config)
 }
 
 fn config_as_value(config: &Config) -> Result<toml::Value, ConfigError> {
