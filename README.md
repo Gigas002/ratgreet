@@ -2,7 +2,7 @@
 
 Graphical console greeter for [greetd](https://git.sr.ht/~kennylevinsen/greetd).
 
-![Screenshot of tuigreet](https://github.com/apognu/tuigreet/blob/master/contrib/screenshot.png)
+![Screenshot of tuigreet](docs/images/screenshot.png)
 
 ```
 Usage: tuigreet [OPTIONS]
@@ -147,18 +147,11 @@ Pre-built binaries of `tuigreet` for several architectures can be found in the [
 
 ## Running the tests
 
-Tests from the default features should run without any special consideration by running `cargo test`.
-
-If you intend to run the whole test suite, you will need to perform some setup. One of our features uses NSS to list and filter existing users on the system, and in order not to rely on actual users being created on the host, we use [libnss_wrapper](https://cwrap.org/nss_wrapper.html) to mock responses from NSS. Without this, the tests would use the real user list from your system and probably fail because it cannot find the one it looks for.
-
-After installing `libnss_wrapper` on your system (or compiling it to get the `.so`), you can run those specific tests as such:
-
 ```
-$ export NSS_WRAPPER_PASSWD=contrib/fixtures/passwd
-$ export NSS_WRAPPER_GROUP=contrib/fixtures/group
-$ LD_PRELOAD=/path/to/libnss_wrapper.so cargo test --features nsswrapper nsswrapper_ # To run those tests specifically
-$ LD_PRELOAD=/path/to/libnss_wrapper.so cargo test --all-features # To run the whole test suite
+$ cargo test
 ```
+
+Integration tests use `greetd-stub` and temporary directories; no extra host setup is required.
 
 ## Configuration
 
@@ -254,4 +247,4 @@ Please note that we can only render colors as supported by the running terminal.
 
 Below is a screenshot of the greeter with the following theme applied: `border=magenta;text=cyan;prompt=green;time=red;action=blue;button=yellow;container=black;input=red`:
 
-![Screenshot of tuigreet](https://github.com/apognu/tuigreet/blob/master/contrib/screenshot-themed.png)
+![Screenshot of tuigreet](docs/images/screenshot-themed.png)

@@ -102,7 +102,7 @@ pub struct Session {
     // file.
     pub session_type: SessionType,
     // Path to the session file. Used to uniquely identify sessions, since names
-    // and commands can be identital between two different sessions.
+    // and commands can be identical between two different sessions.
     pub path: Option<PathBuf>,
     // Desktop names as defined with the `DesktopNames` desktop file property
     pub xdg_desktop_names: Option<String>,

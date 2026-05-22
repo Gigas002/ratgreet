@@ -1,5 +1,5 @@
 [files]
-extend-exclude = ["Cargo.lock", "contrib/screenshot*.png"]
+extend-exclude = ["Cargo.lock", "docs/images/*.png", "wau/**"]
 
 [default.extend-words]
 # greetd / PAM / Unix jargon
@@ -11,7 +11,6 @@ uzers = "uzers"
 ratatui = "ratatui"
 crossterm = "crossterm"
 setsid = "setsid"
-nsswrapper = "nsswrapper"
 wayland = "wayland"
 startx = "startx"
 PAM = "PAM"

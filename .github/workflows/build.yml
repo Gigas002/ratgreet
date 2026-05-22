@@ -12,18 +12,6 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: all-features
-            cargo_args: --workspace --release --all-features
-          - name: default
-            cargo_args: --workspace --release
-          - name: minimal
-            cargo_args: --workspace --release --no-default-features
-
-    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
 
     steps:
@@ -34,8 +22,6 @@ jobs:
 
       - name: Build cache
         uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.name }}
 
-      - name: Build (${{ matrix.name }})
-        run: cargo build ${{ matrix.cargo_args }}
+      - name: Build
+        run: cargo build --workspace --release

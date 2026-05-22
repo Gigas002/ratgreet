@@ -4,10 +4,6 @@ version = "0.9.1"
 edition = "2018"
 license = "GPL-3.0-or-later"
 
-[features]
-default = []
-nsswrapper = []
-
 [dependencies]
 ansi-to-tui = "5.0.0-rc.1"
 chrono = "0.4"

@@ -23,7 +23,7 @@ use crate::{
 //
 // This function will be called whenever a keyboard event was captured by the
 // application. It takes a reference to the `Greeter` so it can be aware of the
-// current state of the application and act accordinly; It also receives the
+// current state of the application and act accordingly; It also receives the
 // `Ipc` interface so it is able to interact with `greetd` if necessary.
 pub async fn handle(
     greeter: Arc<RwLock<Greeter>>,

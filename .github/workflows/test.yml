@@ -12,26 +12,15 @@ permissions:
 
 jobs:
   test:
-    strategy:
-      fail-fast: false
-      matrix:
-        features:
-          - --all-features
-          - ""
-          - --no-default-features
-
-    name: test ${{ matrix.features || 'default' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Build cache
         uses: Swatinem/rust-cache@v2
-        with:
-          key: test-${{ matrix.features }}
 
       - name: Run tests
-        run: cargo test --workspace ${{ matrix.features }} --verbose
+        run: cargo test --workspace --verbose
 
   test-coverage:
     runs-on: ubuntu-latest
@@ -49,10 +38,10 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Run tests
-        run: cargo test --workspace --all-features --verbose
+        run: cargo test --workspace --verbose
 
       - name: Generate coverage report (tuigreet)
-        run: cargo llvm-cov --all-features -p tuigreet --lcov --output-path lcov-tuigreet.info
+        run: cargo llvm-cov -p tuigreet --lcov --output-path lcov-tuigreet.info
 
       - name: Upload tuigreet coverage to Codecov
         uses: codecov/codecov-action@v6

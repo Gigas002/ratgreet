@@ -22,13 +22,6 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
-    strategy:
-      fail-fast: false
-      matrix:
-        features:
-          - --all-features
-          - --no-default-features
-
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +31,5 @@ jobs:
           components: clippy
       - name: Build cache
         uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.features }}
-      - name: Clippy (${{ matrix.features }})
-        run: cargo clippy --workspace --all-targets ${{ matrix.features }} -- -D warnings
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings

@@ -40,7 +40,9 @@ Reference plan:
 ### 1.3 Non-goals
 
 - GUI outside the terminal, tray apps, or non-greetd display managers.
-- Multi-language UI in the first overhaul pass (no `i18n-embed`, no `contrib/locales/` runtime loading).
+- Multi-language UI in the first overhaul pass (no `i18n-embed`).
+- Maintaining a `contrib/` tree (locales, fixtures, man page, screenshots, helper scripts).
+- Optional `nsswrapper` Cargo feature and NSS-wrapper–based tests.
 - Preserving every historical CLI flag for backward compatibility — document migration in `CHANGELOG.md` and `examples/config.toml`.
 - Splitting into a separate library crate (deploy workflow ships the `tuigreet` binary only).
 
@@ -116,8 +118,9 @@ tuigreet/
   docs/
     PLAN.md
     WAU_RS_PLAN.md            # reference only
-  contrib/                    # man page, screenshots, fixtures (no locales/)
 ```
+
+No `contrib/` directory — packager docs live in README + `examples/`; screenshots (if any) under `docs/` or external URLs only.
 
 Module boundary rules:
 
@@ -151,21 +154,22 @@ Integration tests: `src/integration/` (greetd-stub, existing harness) and/or `te
 - **Dependency health**: widely adopted crates; avoid archived / inactive deps (~1 year rule from wau).
 - **Replacements (overhaul)**:
 
-| Remove / avoid | Replacement / notes |
-|----------------|---------------------|
-| `nix` | `rustix` (`rustix::system::uname` for hostname) |
-| `getopts` | `clap` (minimal derive on binary only) |
-| `i18n-embed`, `i18n-embed-fl`, `rust-embed`, `unic-langid` | English strings module; delete `i18n.toml`, `contrib/locales/` |
-| `build.rs` + `VERSION` env | `CARGO_PKG_VERSION` in `--version` |
-| `lazy_static` | `std::sync::LazyLock` where still needed |
-| `chrono` `unstable-locales` | Plain `chrono` + fixed `en-US` formatting (no locale feature) |
+| Remove / avoid                                             | Replacement / notes                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `nix`                                                      | `rustix` (`rustix::system::uname` for hostname)                                       |
+| `getopts`                                                  | `clap` (minimal derive on binary only)                                                |
+| `i18n-embed`, `i18n-embed-fl`, `rust-embed`, `unic-langid` | English strings module; delete `i18n.toml`                                            |
+| `nsswrapper` feature + `contrib/fixtures/`                 | Remove feature from `Cargo.toml`; delete `contrib/`; rely on greetd-stub + unit tests |
+| `build.rs` + `VERSION` env                                 | `CARGO_PKG_VERSION` in `--version`                                                    |
+| `lazy_static`                                              | `std::sync::LazyLock` where still needed                                              |
+| `chrono` `unstable-locales`                                | Plain `chrono` + fixed `en-US` formatting (no locale feature)                         |
 
 - **Keep (evaluate versions at upgrade time)**: `greetd_ipc`, `ratatui`, `crossterm`, `tokio`, `uzers`, `utmp-rs`, `zeroize`, `tracing` ecosystem, `smart-default` (or derive `Default` manually over time).
 
-### 2.2 Feature gating
+### 2.2 Features and CI matrix
 
-- **`nsswrapper`**: optional Cargo feature on the `tuigreet` package, same semantics as today.
-- **CI** must build/test **`default`**, **`--all-features`**, and **`--no-default-features`** (see §7.2).
+- **No optional Cargo features** after overhaul: drop `nsswrapper` and the `[features]` table (or leave `default = []` only with no extra flags).
+- **CI** builds/tests the default crate only (no `--all-features` / `--no-default-features` matrix unless a new optional feature is added later).
 
 ---
 
@@ -259,12 +263,12 @@ Resolution: `--theme <path>` → else XDG/`/etc` search path → built-in defaul
 
 Documented in `examples/cli.md`:
 
-| Flag | Purpose |
-|------|---------|
-| `-h`, `--help` | Usage |
-| `-v`, `--version` | `CARGO_PKG_VERSION` (+ target triple optional) |
-| `--config PATH` | Config file |
-| `--theme PATH` | Theme file |
+| Flag                   | Purpose                                          |
+| ---------------------- | ------------------------------------------------ |
+| `-h`, `--help`         | Usage                                            |
+| `-v`, `--version`      | `CARGO_PKG_VERSION` (+ target triple optional)   |
+| `--config PATH`        | Config file                                      |
+| `--theme PATH`         | Theme file                                       |
 | `-d`, `--debug [FILE]` | Enable tracing (file from arg or config default) |
 
 **Removed from CLI** (config/theme only): session dirs, remember flags, padding, width, power commands, keybindings, `--issue`/`--greeting`, `--time`, user-menu bounds, `--theme` inline string, `--env`, wrappers, etc.
@@ -278,32 +282,30 @@ Whenever a phase/step is marked complete:
 - `cargo fmt --check`
 - `typos` (`.typos.toml`)
 - `cargo deny check licenses` (`deny.toml`)
-- `cargo clippy --workspace --all-targets --no-default-features -- -D warnings`
-- `cargo clippy --workspace --all-targets --all-features -- -D warnings`
-- `cargo test --workspace --no-default-features`
-- `cargo test --workspace --all-features`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `cargo test --workspace`
 - `cargo doc --workspace --no-deps` (`RUSTDOCFLAGS=-D warnings`)
 
 ### 4.1 Test discipline
 
 - No inline `#[cfg(test)] mod tests { … }` inside implementation files — use sibling `tests.rs`.
-- Integration tests use `greetd-stub`, `tempfile`, and existing `contrib/fixtures/` where applicable.
+- Integration tests use `greetd-stub` and `tempfile` only (no NSS wrapper, no `contrib/fixtures/`).
 - Remove tests that only assert CLI flag parsing for deprecated flags; replace with config/theme parse tests under `src/config/`, `src/theme/`, `src/settings/`.
 
 ### 4.2 CI blueprint (tuigreet)
 
 Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 
-| Workflow | Job |
-|----------|-----|
-| `build.yml` | Release build matrix: default / `--all-features` / `--no-default-features` |
-| `fmt-clippy.yml` | `cargo fmt --check`; clippy matrix (all-features, no-default-features) |
-| `test.yml` | `cargo test` feature matrix (+ optional `cargo llvm-cov -p tuigreet`) |
-| `doc.yml` | `cargo doc --workspace --no-deps` |
-| `typos.yml` | spelling |
-| `deny.yml` | license check |
-| `deploy.yml` | On `v*` tags: build `tuigreet` release binary, strip, tarball `tuigreet-$VERSION-x86_64-linux.tar.gz` |
-| `dependabot.yml` | cargo + github-actions weekly |
+| Workflow         | Job                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| `build.yml`      | Release build (single default feature set)                                                            |
+| `fmt-clippy.yml` | `cargo fmt --check`; clippy on default targets                                                        |
+| `test.yml`       | `cargo test` (+ optional `cargo llvm-cov -p tuigreet`)                                                |
+| `doc.yml`        | `cargo doc --workspace --no-deps`                                                                     |
+| `typos.yml`      | spelling                                                                                              |
+| `deny.yml`       | license check                                                                                         |
+| `deploy.yml`     | On `v*` tags: build `tuigreet` release binary, strip, tarball `tuigreet-$VERSION-x86_64-linux.tar.gz` |
+| `dependabot.yml` | cargo + github-actions weekly                                                                         |
 
 **Cleanup from wau copy-paste**: no `-p wau`, `-p libwau`, or codecov flags named `wau`/`libwau`.
 
@@ -320,8 +322,10 @@ Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 - [x] Drop `build.rs`; version uses `CARGO_PKG_VERSION`
 - [x] Remove `i18n.toml`, `contrib/locales/`, `src/ui/i18n.rs`, `i18n-embed*` deps; English strings in `src/ui/strings.rs`
 - [x] Replace `nix` with `rustix` (uname); drop `lazy_static` / `chrono` locale features (build unblock)
+- [x] Delete `contrib/` entirely (`fixtures/`, `man/`, screenshots, `git-version.sh`, any remaining locales); screenshots under `docs/images/`
+- [x] Drop `nsswrapper` feature: remove `[features]` entry, `src/info.rs` nsswrapper tests, README nsswrapper instructions; simplify CI workflows (§4.2) to default-only builds
 
-**Verify**: §4 gates on current tree.
+**Verify**: §4 gates on current tree; no `contrib/` paths referenced in code, README, or `.typos.toml`.
 
 ### Phase 1 — Module layout + config/theme schemas
 
@@ -359,8 +363,7 @@ Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 
 ### Phase 5 — Docs + release discipline
 
-- [ ] README: config/theme paths, minimal CLI, greetd unit example
-- [ ] `contrib/man/tuigreet-1.scd` updated
+- [ ] README: config/theme paths, minimal CLI, greetd unit example (no `contrib/` screenshot paths — use `docs/` assets or hosted images)
 - [ ] Remove stale wau references; keep `docs/WAU_RS_PLAN.md` as read-only reference
 - [ ] Tag release when stable
 
@@ -370,18 +373,18 @@ Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 
 ## 6. CLI → config migration (operator reference)
 
-| Former CLI | New location |
-|------------|----------------|
-| `--cmd`, `--env` | `[session]` |
-| `--sessions`, `--xsessions`, wrappers | `[session]` |
-| `--width`, `*-padding`, `--greet-align` | `[ui]` |
-| `--issue`, `--greeting`, `--time`, `--time-format` | `[ui]` |
-| `--remember*` | `[remember]` |
-| `--user-menu*` | `[user_menu]` |
-| `--asterisks*` | `[secrets]` |
-| `--theme` | `theme.toml` / `--theme` path only |
-| `--power-*`, `--kb-*` | `[power]`, `[keybindings]` |
-| `-d` / `--debug` | `[logging]` + CLI `--debug` |
+| Former CLI                                         | New location                       |
+| -------------------------------------------------- | ---------------------------------- |
+| `--cmd`, `--env`                                   | `[session]`                        |
+| `--sessions`, `--xsessions`, wrappers              | `[session]`                        |
+| `--width`, `*-padding`, `--greet-align`            | `[ui]`                             |
+| `--issue`, `--greeting`, `--time`, `--time-format` | `[ui]`                             |
+| `--remember*`                                      | `[remember]`                       |
+| `--user-menu*`                                     | `[user_menu]`                      |
+| `--asterisks*`                                     | `[secrets]`                        |
+| `--theme`                                          | `theme.toml` / `--theme` path only |
+| `--power-*`, `--kb-*`                              | `[power]`, `[keybindings]`         |
+| `-d` / `--debug`                                   | `[logging]` + CLI `--debug`        |
 
 ---
 
@@ -389,7 +392,7 @@ Workflows under `.github/workflows/` (names/paths **tuigreet**, not wau):
 
 - [ ] Crate builds with Phase 0–4 complete
 - [ ] greetd login, session pick, power menus work via **config.toml** + **theme.toml**
-- [ ] No `build.rs`, no i18n crates, no `nix`
+- [ ] No `build.rs`, no i18n crates, no `nix`, no `contrib/`, no `nsswrapper` feature
 - [ ] CI green on push/PR (§4.2 workflows, tuigreet naming)
 - [ ] README and examples document the new configuration model
 
@@ -407,8 +410,10 @@ When example shapes change, update `examples/*.toml` and `examples/cli.md` in th
 
 ### Revision history
 
-| Date | Change |
-|------|--------|
+| Date       | Change                                                                                                                                                     |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-05-22 | Initial tuigreet overhaul plan derived from `WAU_RS_PLAN.md`; CI rename, drop i18n/build.rs, config/theme-first, rustix migration, two-crate target layout |
-| 2026-05-22 | Single-crate layout: keep one `tuigreet` binary; module boundaries only (no `libtuigreet`) |
-| 2026-05-22 | Phase 0 complete: CI hygiene, drop i18n/build.rs, English strings, rustix, quality gates green |
+| 2026-05-22 | Single-crate layout: keep one `tuigreet` binary; module boundaries only (no `libtuigreet`)                                                                 |
+| 2026-05-22 | Phase 0 complete: CI hygiene, drop i18n/build.rs, English strings, rustix, quality gates green                                                             |
+| 2026-05-22 | Plan: drop `nsswrapper` feature and remove `contrib/` entirely; CI default-only                                                                            |
+| 2026-05-22 | Phase 0 complete: removed `contrib/`, `nsswrapper`, CI default-only matrix                                                                                 |

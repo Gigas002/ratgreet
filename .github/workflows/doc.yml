@@ -19,6 +19,6 @@ jobs:
       - name: Build cache
         uses: Swatinem/rust-cache@v2
       - name: Doc
-        run: cargo doc --workspace --no-deps --all-features
+        run: cargo doc --workspace --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
