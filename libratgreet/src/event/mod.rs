@@ -41,16 +41,31 @@ impl Events {
                 }
 
                 #[cfg(all(not(test), not(feature = "test-harness")))]
-                loop {
-                    if crossterm::event::poll(frame_duration).unwrap_or(false) {
-                        while crossterm::event::poll(Duration::ZERO).unwrap_or(false) {
-                            if let Ok(crossterm::event::Event::Key(key)) = crossterm::event::read()
-                            {
-                                let _ = tx.send(Event::Key(key)).await;
+                {
+                    use crossterm::event::{Event as TermEvent, EventStream, KeyEventKind};
+                    use futures_util::StreamExt as _;
+
+                    let mut stream = EventStream::new();
+                    let mut render_interval = tokio::time::interval(frame_duration);
+
+                    loop {
+                        tokio::select! {
+                            biased;
+
+                            maybe_event = stream.next() => {
+                                if let Some(Ok(TermEvent::Key(key))) = maybe_event {
+                                    if key.kind == KeyEventKind::Press {
+                                        let _ = tx.send(Event::Key(key)).await;
+                                        let _ = tx.send(Event::Render).await;
+                                    }
+                                }
+                            }
+
+                            _ = render_interval.tick() => {
+                                let _ = tx.send(Event::Render).await;
                             }
                         }
                     }
-                    let _ = tx.send(Event::Render).await;
                 }
             }
         });

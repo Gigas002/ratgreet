@@ -133,6 +133,10 @@ pub fn resolved_paths(override_path: Option<&Path>) -> Vec<PathBuf> {
         return vec![path.to_path_buf()];
     }
 
+    #[cfg(test)]
+    return vec![];
+
+    #[cfg(not(test))]
     vec![system_path(), user_path()]
 }
 
@@ -169,6 +173,9 @@ pub fn load_layered(override_path: Option<&Path>) -> ThemeFile {
 
     let paths: Vec<PathBuf> = match override_path {
         Some(path) => vec![path.to_path_buf()],
+        #[cfg(test)]
+        None => vec![],
+        #[cfg(not(test))]
         None => vec![system_path(), user_path()],
     };
 

@@ -46,7 +46,10 @@ where
     let mut terminal = Terminal::new(backend)?;
 
     #[cfg(all(not(test), not(feature = "test-harness")))]
-    terminal.clear()?;
+    {
+        terminal.clear()?;
+        terminal.set_cursor_position((0, 0))?;
+    }
 
     let ipc = Ipc::new();
 

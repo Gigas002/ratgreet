@@ -57,9 +57,10 @@ fn resolved_paths_prefers_override() {
 
 #[test]
 fn resolved_paths_default_order() {
-    let paths = resolved_paths(None);
-    assert_eq!(paths[0], system_path());
-    assert_eq!(paths[1], user_path());
+    // resolved_paths(None) returns [] in test mode to avoid picking up
+    // real system/user config files. Verify the path constants directly.
+    assert_eq!(system_path(), PathBuf::from("/etc/ratgreet/config.toml"));
+    assert!(user_path().ends_with("ratgreet/config.toml"));
 }
 
 #[test]

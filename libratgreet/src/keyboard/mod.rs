@@ -74,6 +74,15 @@ pub async fn handle(
                 greeter.mode = greeter.previous_mode;
             }
 
+            // In Username mode there is no active greetd session yet, so
+            // Ipc::cancel would send a spurious CancelSession and trigger a
+            // reconnect loop (especially when ESC arrives as a fragment of a
+            // VT escape sequence for F-keys). Just clear the input instead.
+            Mode::Username => {
+                greeter.username = MaskedString::default();
+                greeter.cursor_offset = 0;
+            }
+
             _ => {
                 Ipc::cancel(&mut greeter).await;
                 greeter.reset(false).await;
