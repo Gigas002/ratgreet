@@ -155,7 +155,7 @@ where
         };
 
         if !hide_cursor && let Some(cursor) = cursor {
-            f.set_cursor_position((cursor.0 - 1, cursor.1 - 1));
+            f.set_cursor_position((cursor.0.saturating_sub(1), cursor.1.saturating_sub(1)));
         }
     })?;
 

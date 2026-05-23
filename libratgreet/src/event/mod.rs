@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+#[cfg(all(not(test), not(feature = "test-harness")))]
+use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use tokio::{
     process::Command,
@@ -42,11 +44,40 @@ impl Events {
 
                 #[cfg(all(not(test), not(feature = "test-harness")))]
                 loop {
+                    // `ate_esc` is reset each outer iteration so that Char events typed
+                    // *after* the current batch are never suppressed.
+                    let mut ate_esc = false;
+
                     if crossterm::event::poll(frame_duration).unwrap_or(false) {
                         while crossterm::event::poll(Duration::ZERO).unwrap_or(false) {
-                            if let Ok(crossterm::event::Event::Key(key)) = crossterm::event::read()
-                            {
-                                let _ = tx.send(Event::Key(key)).await;
+                            match crossterm::event::read() {
+                                Ok(crossterm::event::Event::Key(key)) => {
+                                    match key.code {
+                                        KeyCode::Esc => {
+                                            // Mark that an ESC arrived in this batch.
+                                            // Char events that follow immediately in the
+                                            // same batch are discarded: on a Linux VT the
+                                            // keyboard driver delivers F-key sequences
+                                            // byte-by-byte, so crossterm may return a lone
+                                            // Esc followed by the remaining bytes as
+                                            // individual Char events.
+                                            ate_esc = true;
+                                            let _ = tx.send(Event::Key(key)).await;
+                                        }
+                                        KeyCode::Char(_) if ate_esc => {
+                                            // Discard – almost certainly an escape-sequence
+                                            // fragment, not deliberate user input.
+                                        }
+                                        _ => {
+                                            ate_esc = false;
+                                            let _ = tx.send(Event::Key(key)).await;
+                                        }
+                                    }
+                                }
+                                // Terminal resize: ratatui auto-detects size changes on
+                                // each draw(), so just let the pending Render handle it.
+                                Ok(crossterm::event::Event::Resize(..)) => {}
+                                _ => {}
                             }
                         }
                     }

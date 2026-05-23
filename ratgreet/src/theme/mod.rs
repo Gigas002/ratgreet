@@ -169,7 +169,10 @@ pub fn load_layered(override_path: Option<&Path>) -> ThemeFile {
 
     let paths: Vec<PathBuf> = match override_path {
         Some(path) => vec![path.to_path_buf()],
+        #[cfg(not(test))]
         None => vec![system_path(), user_path()],
+        #[cfg(test)]
+        None => vec![],
     };
 
     for path in paths {
