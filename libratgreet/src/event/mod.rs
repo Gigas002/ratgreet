@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crossterm::event::KeyEvent;
+use ratatui::crossterm::event::KeyEvent;
 use tokio::{
     process::Command,
     sync::mpsc::{self, Sender},
@@ -42,9 +42,10 @@ impl Events {
 
                 #[cfg(all(not(test), not(feature = "test-harness")))]
                 loop {
-                    if crossterm::event::poll(frame_duration).unwrap_or(false) {
-                        while crossterm::event::poll(Duration::ZERO).unwrap_or(false) {
-                            if let Ok(crossterm::event::Event::Key(key)) = crossterm::event::read()
+                    if ratatui::crossterm::event::poll(frame_duration).unwrap_or(false) {
+                        while ratatui::crossterm::event::poll(Duration::ZERO).unwrap_or(false) {
+                            if let Ok(ratatui::crossterm::event::Event::Key(key)) =
+                                ratatui::crossterm::event::read()
                             {
                                 let _ = tx.send(Event::Key(key)).await;
                             }

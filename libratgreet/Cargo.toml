@@ -9,8 +9,8 @@ test-harness = []
 
 [dependencies]
 chrono.workspace = true
-crossterm.workspace = true
 greetd_ipc.workspace = true
+ratatui.workspace = true
 rustix.workspace = true
 rust-ini = "0.21"
 tokio = { workspace = true, features = [

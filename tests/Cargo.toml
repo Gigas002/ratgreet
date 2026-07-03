@@ -11,7 +11,6 @@ chrono.workspace = true
 greetd-stub = "0.3"
 tempfile.workspace = true
 unicode-width = "0.2"
-crossterm.workspace = true
 tokio = { workspace = true, features = [
   "net",
   "sync",

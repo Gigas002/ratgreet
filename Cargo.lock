@@ -281,7 +281,6 @@ dependencies = [
  "crossterm_winapi",
  "derive_more",
  "document-features",
- "futures-core",
  "mio",
  "parking_lot",
  "rustix",
@@ -710,8 +709,8 @@ name = "libratgreet"
 version = "0.10.0"
 dependencies = [
  "chrono",
- "crossterm",
  "greetd_ipc",
+ "ratatui",
  "rust-ini",
  "rustix",
  "tempfile",
@@ -1040,7 +1039,6 @@ version = "0.10.0"
 dependencies = [
  "chrono",
  "clap",
- "crossterm",
  "greetd_ipc",
  "libratgreet",
  "ratatui",
@@ -1059,7 +1057,6 @@ name = "ratgreet-tests"
 version = "0.10.0"
 dependencies = [
  "chrono",
- "crossterm",
  "greetd-stub",
  "libratgreet",
  "ratatui",

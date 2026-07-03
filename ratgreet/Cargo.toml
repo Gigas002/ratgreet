@@ -22,7 +22,6 @@ serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 toml = "1.1"
 chrono.workspace = true
-crossterm.workspace = true
 greetd_ipc.workspace = true
 tokio.workspace = true
 ratatui.workspace = true

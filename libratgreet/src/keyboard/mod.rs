@@ -1,6 +1,6 @@
 use std::{error::Error, sync::Arc};
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use greetd_ipc::Request;
 use tokio::sync::RwLock;
 

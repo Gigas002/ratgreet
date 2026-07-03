@@ -1,6 +1,6 @@
 use std::{error::Error, io, sync::Arc};
 
-use crossterm::{
+use ratatui::crossterm::{
     execute,
     terminal::{LeaveAlternateScreen, disable_raw_mode},
 };
@@ -15,7 +15,7 @@ use ratatui::{Terminal, backend::Backend};
 use tokio::sync::RwLock;
 
 #[cfg(all(not(test), not(feature = "test-harness")))]
-use crossterm::terminal::{EnterAlternateScreen, enable_raw_mode};
+use ratatui::crossterm::terminal::{EnterAlternateScreen, enable_raw_mode};
 
 use crate::ui::common::style::Theme;
 

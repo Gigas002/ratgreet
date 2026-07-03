@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyModifiers};
+use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use libgreetd_stub::SessionOptions;
 
 use super::common::IntegrationRunner;

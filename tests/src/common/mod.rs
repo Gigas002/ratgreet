@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use libgreetd_stub::SessionOptions;
 use ratatui::buffer::Buffer;
 use tempfile::NamedTempFile;
