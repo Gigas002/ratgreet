@@ -1,15 +1,15 @@
 use std::{error::Error, io, sync::Arc};
 
-use ratatui::crossterm::{
-    execute,
-    terminal::{LeaveAlternateScreen, disable_raw_mode},
-};
 use libratgreet::{
     event::{Event, Events},
     greeter::{AuthStatus, Greeter},
     ipc::Ipc,
     keyboard,
     power::PowerPostAction,
+};
+use ratatui::crossterm::{
+    execute,
+    terminal::{LeaveAlternateScreen, disable_raw_mode},
 };
 use ratatui::{Terminal, backend::Backend};
 use tokio::sync::RwLock;

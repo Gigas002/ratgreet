@@ -1,7 +1,7 @@
 use std::{error::Error, sync::Arc};
 
-use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use greetd_ipc::Request;
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tokio::sync::RwLock;
 
 use crate::{

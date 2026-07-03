@@ -8,9 +8,9 @@ use std::{
     time::Duration,
 };
 
-use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use libgreetd_stub::SessionOptions;
 use ratatui::buffer::Buffer;
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tempfile::NamedTempFile;
 use tokio::{
     sync::{

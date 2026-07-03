@@ -1,5 +1,5 @@
-use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use libgreetd_stub::SessionOptions;
+use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 
 use libratgreet::{
     model::{menu::Menu, power_item::Power, sessions::Session},

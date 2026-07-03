@@ -1,5 +1,5 @@
-use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use libgreetd_stub::SessionOptions;
+use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 
 use super::common::IntegrationRunner;
 
