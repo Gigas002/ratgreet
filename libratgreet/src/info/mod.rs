@@ -4,13 +4,13 @@ use std::{
     ffi::CStr,
     fs::{self},
     path::{Path, PathBuf},
-    process::Command,
     sync::LazyLock,
 };
 
 use chrono::Local;
 use ini::Ini;
 use rustix::system::uname;
+use tokio::process::Command;
 
 use crate::{
     Greeter,
@@ -177,11 +177,16 @@ where
     }))
 }
 
-pub fn capslock_status() -> bool {
+// Checks caps lock state by shelling out to `kbdinfo`. This runs the subprocess via
+// `tokio::process::Command` (rather than `std::process::Command`) so callers can `.await`
+// it instead of blocking the calling task/thread — this is polled from the render path
+// roughly twice a second, and a blocking fork/exec there would stall rendering, keyboard
+// dispatch and IPC on the same worker thread for its duration.
+pub async fn capslock_status() -> bool {
     let mut command = Command::new("kbdinfo");
     command.args(["gkbled", "capslock"]);
 
-    match command.output() {
+    match command.output().await {
         Ok(output) => output.status.code() == Some(0),
         Err(_) => false,
     }

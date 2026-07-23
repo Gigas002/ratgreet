@@ -54,6 +54,10 @@ where
     let mut greeter = greeter.write().await;
     let hide_cursor = should_hide_cursor(&greeter);
 
+    // `capslock_status` shells out to an external process; do this before entering the
+    // (synchronous) `terminal.draw` closure so the `.await` cannot block the caller mid-draw.
+    let caps_lock_on = capslock_status().await;
+
     terminal.draw(|f| {
         let size = f.area();
         let chunks = Layout::default()
@@ -133,7 +137,7 @@ where
 
         f.render_widget(status_left, status_chunks[STATUSBAR_LEFT_INDEX]);
 
-        if capslock_status() {
+        if caps_lock_on {
             let status_right_text = status_label(theme, strings::get("status_caps"));
             let status_right = Paragraph::new(status_right_text).alignment(Alignment::Right);
 
@@ -155,7 +159,7 @@ where
         };
 
         if !hide_cursor && let Some(cursor) = cursor {
-            f.set_cursor_position((cursor.0 - 1, cursor.1 - 1));
+            f.set_cursor_position((cursor.0.saturating_sub(1), cursor.1.saturating_sub(1)));
         }
     })?;
 
