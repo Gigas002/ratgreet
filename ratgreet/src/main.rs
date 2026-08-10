@@ -16,6 +16,11 @@ async fn main() {
         }
     };
 
+    if let Err(err) = app::prepare_terminal() {
+        eprintln!("failed to initialize terminal: {err}");
+        process::exit(1);
+    }
+
     let theme = settings.theme.clone();
     let backend = CrosstermBackend::new(io::stdout());
     let events = Events::new().await;

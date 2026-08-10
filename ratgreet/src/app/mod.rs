@@ -23,6 +23,37 @@ mod greeter_init;
 
 pub use greeter_init::init_greeter;
 
+/// Puts the terminal into raw mode and switches to the alternate screen.
+///
+/// This must run *before* anything else touches stdin — in particular before
+/// [`libratgreet::event::Events::new`] spawns its keyboard reader, and before any other
+/// startup work (settings/session loading, connecting to greetd) that could give the user
+/// time to type. While the terminal is still in cooked/line-buffered mode, keystrokes are
+/// echoed straight to the (not-yet-alternate) screen and only delivered a full line at a
+/// time; once raw mode kicks in mid-typing, buffered input can be replayed out of order or
+/// misinterpreted by the reader. Real greetd/VT sessions are especially prone to this,
+/// since there is often stale input already queued on the tty (from boot messages, a
+/// previous session, or an impatient user) by the time ratgreet starts, whereas a manual
+/// `cargo run` in a desktop terminal rarely has any pending input at startup.
+#[cfg(all(not(test), not(feature = "test-harness")))]
+pub fn prepare_terminal() -> io::Result<()> {
+    enable_raw_mode()?;
+    execute!(io::stdout(), EnterAlternateScreen)?;
+
+    // Discard whatever was already buffered on the tty before we started reading for
+    // real, so it cannot be misinterpreted as keystrokes once the main loop starts.
+    while ratatui::crossterm::event::poll(std::time::Duration::ZERO).unwrap_or(false) {
+        let _ = ratatui::crossterm::event::read();
+    }
+
+    Ok(())
+}
+
+#[cfg(any(test, feature = "test-harness"))]
+pub fn prepare_terminal() -> io::Result<()> {
+    Ok(())
+}
+
 pub async fn run<B>(
     backend: B,
     greeter: Greeter,
@@ -36,12 +67,6 @@ where
     tracing::info!("ratgreet started");
 
     register_panic_handler();
-
-    #[cfg(all(not(test), not(feature = "test-harness")))]
-    {
-        enable_raw_mode()?;
-        execute!(io::stdout(), EnterAlternateScreen)?;
-    }
 
     let mut terminal = Terminal::new(backend)?;
 

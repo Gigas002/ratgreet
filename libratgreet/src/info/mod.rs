@@ -1,16 +1,17 @@
 use std::{
+    collections::HashMap,
     env,
     error::Error,
     ffi::CStr,
     fs::{self},
     path::{Path, PathBuf},
-    process::Command,
     sync::LazyLock,
 };
 
 use chrono::Local;
 use ini::Ini;
 use rustix::system::uname;
+use tokio::process::Command;
 
 use crate::{
     Greeter,
@@ -44,6 +45,75 @@ pub fn get_hostname() -> String {
     cstr_str(uname().nodename()).to_string()
 }
 
+/// Parses the `KEY=VALUE` lines of an os-release(5) file, stripping quotes from values.
+fn parse_os_release(contents: &str) -> HashMap<String, String> {
+    contents
+        .lines()
+        .filter_map(|line| {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                return None;
+            }
+
+            let (key, value) = line.split_once('=')?;
+            let value = value.trim();
+            let value = value
+                .strip_prefix('"')
+                .and_then(|v| v.strip_suffix('"'))
+                .or_else(|| value.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')))
+                .unwrap_or(value);
+
+            Some((key.trim().to_string(), value.to_string()))
+        })
+        .collect()
+}
+
+fn read_os_release() -> HashMap<String, String> {
+    fs::read_to_string("/etc/os-release")
+        .or_else(|_| fs::read_to_string("/usr/lib/os-release"))
+        .map(|contents| parse_os_release(&contents))
+        .unwrap_or_default()
+}
+
+/// Expands agetty's `\S` and `\S{VARNAME}` escapes using values from os-release(5).
+/// Bare `\S` reads the `NAME` field (falling back to "Linux" if unavailable); `\S{VARNAME}`
+/// reads the named field and expands to nothing if that field is absent.
+fn expand_source(issue: &str, os_release: &HashMap<String, String>) -> String {
+    let mut result = String::with_capacity(issue.len());
+    let mut chars = issue.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c != '\\' || chars.peek() != Some(&'S') {
+            result.push(c);
+            continue;
+        }
+
+        chars.next(); // consume 'S'
+
+        let field = if chars.peek() == Some(&'{') {
+            chars.next(); // consume '{'
+            let mut name = String::new();
+            for ch in chars.by_ref() {
+                if ch == '}' {
+                    break;
+                }
+                name.push(ch);
+            }
+            name
+        } else {
+            "NAME".to_string()
+        };
+
+        match os_release.get(&field) {
+            Some(value) => result.push_str(value),
+            None if field == "NAME" => result.push_str("Linux"),
+            None => {}
+        }
+    }
+
+    result
+}
+
 pub fn get_issue() -> Option<String> {
     let (date, time) = {
         let now = Local::now();
@@ -64,8 +134,8 @@ pub fn get_issue() -> Option<String> {
     let uts = uname();
 
     if let Ok(issue) = fs::read_to_string("/etc/issue") {
+        let issue = expand_source(&issue, &read_os_release());
         let issue = issue
-            .replace("\\S", "Linux")
             .replace("\\l", &format!("tty{vtnr}"))
             .replace("\\d", &date)
             .replace("\\t", &time)
@@ -177,12 +247,20 @@ where
     }))
 }
 
-pub fn capslock_status() -> bool {
+// Checks caps lock state by shelling out to `kbdinfo`. This runs the subprocess via
+// `tokio::process::Command` (rather than `std::process::Command`) so callers can `.await`
+// it instead of blocking the calling task/thread — this is polled from the render path
+// roughly twice a second, and a blocking fork/exec there would stall rendering, keyboard
+// dispatch and IPC on the same worker thread for its duration.
+pub async fn capslock_status() -> bool {
     let mut command = Command::new("kbdinfo");
     command.args(["gkbled", "capslock"]);
 
-    match command.output() {
+    match command.output().await {
         Ok(output) => output.status.code() == Some(0),
         Err(_) => false,
     }
 }
+
+#[cfg(test)]
+mod tests;
