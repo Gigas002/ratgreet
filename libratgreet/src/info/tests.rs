@@ -8,8 +8,14 @@ fn parse_os_release_strips_quotes_and_comments() {
 
     let fields = parse_os_release(contents);
 
-    assert_eq!(fields.get("NAME").map(String::as_str), Some("CachyOS Linux"));
-    assert_eq!(fields.get("PRETTY_NAME").map(String::as_str), Some("CachyOS"));
+    assert_eq!(
+        fields.get("NAME").map(String::as_str),
+        Some("CachyOS Linux")
+    );
+    assert_eq!(
+        fields.get("PRETTY_NAME").map(String::as_str),
+        Some("CachyOS")
+    );
     assert_eq!(fields.get("ID").map(String::as_str), Some("cachyos"));
 }
 
