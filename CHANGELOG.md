@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0 - 2026-09-04
+
 ### Changed
 
 - **Rename tuigreet → ratgreet**: binary and crate names (`ratgreet`, `libratgreet`, `ratgreet-tests`), default paths (`/etc/ratgreet/`, `~/.config/ratgreet/`, `/tmp/ratgreet.log`), and CI/release artifacts.
@@ -31,16 +33,16 @@
 
 ### CLI → config migration
 
-| Former CLI | New location |
-| --- | --- |
-| `--cmd`, `--env` | `[session]` |
-| `--sessions`, `--xsessions`, `--session-wrapper`, `--xsession-wrapper`, `--no-xsession-wrapper` | `[session]` |
-| `--width`, `--window-padding`, `--container-padding`, `--prompt-padding`, `--greet-align` | `theme.toml` `[ui]` |
-| `--issue`, `--greeting`, `--time`, `--time-format` | `theme.toml` `[ui]` |
-| `--remember`, `--remember-session`, `--remember-user-session` | removed (manual login every time) |
-| `--user-menu`, `--user-menu-min-uid`, `--user-menu-max-uid` | removed (type username manually) |
-| `--asterisks`, `--asterisks-char` | `[secrets].display` (`plain` / `hidden` / `masked`) + `mask_char` |
-| `--theme` (inline colors) | `theme.toml` / `--theme PATH` |
-| `--power-shutdown`, `--power-reboot`, `--power-no-setsid` | `[power]` |
-| `--kb-command`, `--kb-sessions`, `--kb-power` | `[keybindings]` |
-| `-d` / `--debug` | `[logging]` + CLI `--debug [FILE]` |
+| Former CLI                                                                                      | New location                                                      |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `--cmd`, `--env`                                                                                | `[session]`                                                       |
+| `--sessions`, `--xsessions`, `--session-wrapper`, `--xsession-wrapper`, `--no-xsession-wrapper` | `[session]`                                                       |
+| `--width`, `--window-padding`, `--container-padding`, `--prompt-padding`, `--greet-align`       | `theme.toml` `[ui]`                                               |
+| `--issue`, `--greeting`, `--time`, `--time-format`                                              | `theme.toml` `[ui]`                                               |
+| `--remember`, `--remember-session`, `--remember-user-session`                                   | removed (manual login every time)                                 |
+| `--user-menu`, `--user-menu-min-uid`, `--user-menu-max-uid`                                     | removed (type username manually)                                  |
+| `--asterisks`, `--asterisks-char`                                                               | `[secrets].display` (`plain` / `hidden` / `masked`) + `mask_char` |
+| `--theme` (inline colors)                                                                       | `theme.toml` / `--theme PATH`                                     |
+| `--power-shutdown`, `--power-reboot`, `--power-no-setsid`                                       | `[power]`                                                         |
+| `--kb-command`, `--kb-sessions`, `--kb-power`                                                   | `[keybindings]`                                                   |
+| `-d` / `--debug`                                                                                | `[logging]` + CLI `--debug [FILE]`                                |

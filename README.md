@@ -1,6 +1,6 @@
 # ratgreet
 
-Terminal greeter for [greetd](https://git.sr.ht/~kennylevinsen/greetd). Built with Rust and [ratatui](https://ratatui.rs/).
+Terminal greeter for [greetd](https://git.sr.ht/~kennylevinsen/greetd), a [tuigreet](https://github.com/tuigreet/tuigreet) fork. Built with Rust and [ratatui](https://ratatui.rs/).
 
 ## Overview
 
@@ -21,13 +21,11 @@ Missing, unreadable, invalid, or **empty** config/theme files are skipped; the g
 | [`examples/theme.toml`](examples/theme.toml)   | Layout, banner, clock, colors              |
 | [`examples/cli.md`](examples/cli.md)           | CLI flags, file resolution, greetd snippet |
 
+## Migrating from tuigreet
+
+The project was renamed **tuigreet → ratgreet** (binary, crates, config paths under `/etc/ratgreet/`). Long CLI flags moved to TOML — see [`CHANGELOG.md`](CHANGELOG.md). Removed: user picker (`--user-menu`), remember/cache (`--remember*`).
+
 ## Development
-
-Workspace layout: **`libratgreet/`** (greetd core), **`ratgreet/`** (config, UI, binary), **`tests/`** (greetd-stub integration). Details in [`docs/PLAN.md`](docs/PLAN.md).
-
-```bash
-cargo test --workspace
-```
 
 ### Run locally (normal terminal)
 
@@ -55,11 +53,3 @@ GREETD_SOCK=/tmp/greetd.sock cargo run -p ratgreet -- \
 Debug builds run `true` after login; release builds need `[session] cmd` in config when you add one. See [`examples/cli.md`](examples/cli.md).
 
 The `test-harness` Cargo feature is enabled only by the `ratgreet-tests` crate for in-memory integration tests — not for packagers or manual runs.
-
-## Migrating from tuigreet
-
-The project was renamed **tuigreet → ratgreet** (binary, crates, config paths under `/etc/ratgreet/`). Long CLI flags moved to TOML — see [`CHANGELOG.md`](CHANGELOG.md). Removed: user picker (`--user-menu`), remember/cache (`--remember*`).
-
-## License
-
-GPL-3.0-or-later. See `LICENSE`.
