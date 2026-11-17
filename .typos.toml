@@ -19,3 +19,5 @@ PAM = "PAM"
 
 [default]
 locale = "en-us"
+# Commit hashes (docs/AUDIT.md)
+extend-ignore-re = ["\\b[0-9a-f]{7}\\b"]
