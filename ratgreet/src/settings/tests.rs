@@ -7,9 +7,19 @@ use crate::theme::GreetAlign;
 const EXAMPLE_CONFIG: &str = include_str!("../../../examples/config.toml");
 const EXAMPLE_THEME: &str = include_str!("../../../examples/theme.toml");
 
+/// Overrides that keep the host's `/etc/ratgreet` and `~/.config/ratgreet`
+/// files out of a test: both paths point at files that don't exist.
+fn isolated() -> CliOverrides {
+    CliOverrides {
+        config: Some(PathBuf::from("/nonexistent/ratgreet/config.toml")),
+        theme: Some(PathBuf::from("/nonexistent/ratgreet/theme.toml")),
+        ..CliOverrides::default()
+    }
+}
+
 #[test]
 fn load_defaults_without_files() {
-    let settings = Settings::load(&CliOverrides::default()).unwrap();
+    let settings = Settings::load(&isolated()).unwrap();
     assert_eq!(settings.ui.width, 80);
     assert_eq!(settings.keybindings.power, 12);
     assert!(!settings.logging.debug);
@@ -20,7 +30,7 @@ fn load_defaults_without_files() {
 fn cli_debug_overrides_logging() {
     let cli = CliOverrides {
         debug: Some(DebugOverride::LogFile("/var/log/ratgreet.log".into())),
-        ..CliOverrides::default()
+        ..isolated()
     };
     let settings = Settings::load(&cli).unwrap();
     assert!(settings.logging.debug);
@@ -38,7 +48,7 @@ fn load_from_explicit_config_and_theme_paths() {
     let cli = CliOverrides {
         config: Some(config_path),
         theme: Some(theme_path),
-        ..CliOverrides::default()
+        ..isolated()
     };
 
     let settings = Settings::load(&cli).unwrap();
@@ -56,7 +66,7 @@ fn load_from_explicit_config_and_theme_paths() {
 fn bad_explicit_config_path_falls_back_to_defaults() {
     let cli = CliOverrides {
         config: Some(PathBuf::from("/nonexistent/ratgreet/config.toml")),
-        ..CliOverrides::default()
+        ..isolated()
     };
     let settings = Settings::load(&cli).unwrap();
     assert_eq!(settings.ui.width, 80);
@@ -66,7 +76,7 @@ fn bad_explicit_config_path_falls_back_to_defaults() {
 fn bad_explicit_theme_path_falls_back_to_defaults() {
     let cli = CliOverrides {
         theme: Some(PathBuf::from("/nonexistent/ratgreet/theme.toml")),
-        ..CliOverrides::default()
+        ..isolated()
     };
     let settings = Settings::load(&cli).unwrap();
     assert_eq!(settings.ui.width, 80);
@@ -88,7 +98,7 @@ width = 120
 
     let cli = CliOverrides {
         theme: Some(theme_path.clone()),
-        ..CliOverrides::default()
+        ..isolated()
     };
 
     let settings = Settings::load(&cli).unwrap();

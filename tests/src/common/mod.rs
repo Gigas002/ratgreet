@@ -86,9 +86,12 @@ impl IntegrationRunner {
             }
         });
 
+        // Missing files rather than `None`, so the host's /etc/ratgreet and
+        // ~/.config/ratgreet files never reach a test.
+        let missing = |name: &str| PathBuf::from("/nonexistent/ratgreet").join(name);
         let settings = Settings::load(&CliOverrides {
-            config,
-            theme,
+            config: Some(config.unwrap_or_else(|| missing("config.toml"))),
+            theme: Some(theme.unwrap_or_else(|| missing("theme.toml"))),
             ..CliOverrides::default()
         })
         .expect("integration config must load");
