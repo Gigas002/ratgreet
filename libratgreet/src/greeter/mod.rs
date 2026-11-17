@@ -233,6 +233,7 @@ impl Greeter {
 
         self.working = false;
         self.done = false;
+        self.cursor_offset = 0;
 
         self.scrub(false, soft);
         self.connect().await

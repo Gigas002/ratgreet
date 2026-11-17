@@ -132,6 +132,7 @@ async fn escape() {
 #[tokio::test]
 async fn left_right() {
     let greeter = Arc::new(RwLock::new(Greeter::default()));
+    greeter.write().await.username = MaskedString::from("ab".to_string(), None);
 
     let result = handle(
         greeter.clone(),
@@ -164,7 +165,8 @@ async fn left_right() {
         let status = greeter.read().await;
 
         assert!(result.is_ok());
-        assert_eq!(status.cursor_offset, 1);
+        // Clamped at the end of the text.
+        assert_eq!(status.cursor_offset, 0);
     }
 }
 
@@ -367,4 +369,96 @@ async fn ctrl_a_e() {
         assert!(result.is_ok());
         assert_eq!(status.cursor_offset, 0);
     }
+}
+
+async fn press(greeter: &Arc<RwLock<Greeter>>, ipc: &Ipc, code: KeyCode) {
+    handle(
+        greeter.clone(),
+        KeyEvent::new(code, KeyModifiers::empty()),
+        ipc.clone(),
+    )
+    .await
+    .unwrap();
+}
+
+async fn type_text(greeter: &Arc<RwLock<Greeter>>, ipc: &Ipc, text: &str) {
+    for c in text.chars() {
+        press(greeter, ipc, KeyCode::Char(c)).await;
+    }
+}
+
+/// The cursor moved within the username used to carry over to the password
+/// prompt: typed without a redraw in between (a fast typist, or a password
+/// manager), the password's characters were inserted out of order.
+#[tokio::test]
+async fn the_password_starts_with_the_cursor_at_its_end() {
+    let greeter = Arc::new(RwLock::new(Greeter::default()));
+    let ipc = Ipc::new();
+    type_text(&greeter, &ipc, "alice").await;
+    press(&greeter, &ipc, KeyCode::Left).await;
+    press(&greeter, &ipc, KeyCode::Left).await;
+    press(&greeter, &ipc, KeyCode::Enter).await;
+    {
+        // greetd asks for the password.
+        let mut greeter = greeter.write().await;
+        assert_eq!(greeter.username.value, "alice");
+        greeter.working = false;
+        greeter.mode = Mode::Password;
+        greeter.set_prompt("Password:");
+    }
+    type_text(&greeter, &ipc, "secret").await;
+    assert_eq!(greeter.read().await.buffer, "secret");
+}
+
+/// Left past the start, or Right past the end, doesn't move the insertion
+/// point out of the text.
+#[tokio::test]
+async fn the_cursor_stays_within_the_text() {
+    let greeter = Arc::new(RwLock::new(Greeter::default()));
+    let ipc = Ipc::new();
+    type_text(&greeter, &ipc, "bc").await;
+    for _ in 0..5 {
+        press(&greeter, &ipc, KeyCode::Left).await;
+    }
+    type_text(&greeter, &ipc, "a").await;
+    for _ in 0..5 {
+        press(&greeter, &ipc, KeyCode::Right).await;
+    }
+    type_text(&greeter, &ipc, "d").await;
+    assert_eq!(greeter.read().await.username.value, "abcd");
+    press(&greeter, &ipc, KeyCode::Left).await;
+    press(&greeter, &ipc, KeyCode::Backspace).await;
+    press(&greeter, &ipc, KeyCode::Delete).await;
+    assert_eq!(greeter.read().await.username.value, "ab");
+}
+
+/// No sessions installed: Down in the (empty) session menu used to
+/// underflow `len() - 1`.
+#[tokio::test]
+async fn down_in_an_empty_menu() {
+    let greeter = Arc::new(RwLock::new(Greeter::default()));
+    let ipc = Ipc::new();
+    for mode in [Mode::Sessions, Mode::Power] {
+        greeter.write().await.mode = mode;
+        press(&greeter, &ipc, KeyCode::Down).await;
+        press(&greeter, &ipc, KeyCode::Enter).await;
+    }
+    assert_eq!(greeter.read().await.sessions.selected, 0);
+    assert_eq!(greeter.read().await.powers.selected, 0);
+}
+
+/// In-place edits find byte positions for multi-byte characters.
+#[tokio::test]
+async fn editing_between_multi_byte_characters() {
+    let greeter = Arc::new(RwLock::new(Greeter::default()));
+    let ipc = Ipc::new();
+    type_text(&greeter, &ipc, "jérme").await;
+    press(&greeter, &ipc, KeyCode::Left).await;
+    press(&greeter, &ipc, KeyCode::Left).await;
+    type_text(&greeter, &ipc, "ô").await;
+    assert_eq!(greeter.read().await.username.value, "jérôme");
+    press(&greeter, &ipc, KeyCode::Left).await;
+    press(&greeter, &ipc, KeyCode::Backspace).await;
+    press(&greeter, &ipc, KeyCode::Delete).await;
+    assert_eq!(greeter.read().await.username.value, "jéme");
 }
