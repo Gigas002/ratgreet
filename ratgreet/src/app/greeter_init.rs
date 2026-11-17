@@ -52,7 +52,7 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
         greeter.connect().await;
     }
 
-    greeter.logger = crate::logger::init(&greeter);
+    greeter.logger = crate::logger::init(&greeter, settings.logging.level);
 
     let sessions = get_sessions(&greeter).unwrap_or_default();
 
