@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 publish = false
 
-[dependencies]
+[dev-dependencies]
 libratgreet = { path = "../libratgreet", features = ["test-harness"] }
 ratgreet = { path = "../ratgreet", features = ["test-harness"] }
 jiff.workspace = true

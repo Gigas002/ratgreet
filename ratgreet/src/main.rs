@@ -9,9 +9,9 @@ use ratgreet::{app, cli::Cli, settings};
 async fn main() {
     let cli = Cli::parse();
 
-    // `cargo build --workspace` unifies the `test-harness` feature (enabled by
-    // the integration tests) into this binary: it would then never connect to
-    // greetd nor read the keyboard, and nobody could log in.
+    // The integration tests enable `test-harness`, and Cargo unifies features
+    // in a build: a binary from a test build would never connect to greetd
+    // nor read the keyboard, and nobody could log in.
     if cfg!(feature = "test-harness") {
         eprintln!(
             "this ratgreet was built with the test-harness feature and cannot greet; \
