@@ -17,6 +17,7 @@
 - `cargo build --release` at the workspace root produced a greeter with the `test-harness` feature (unified in from the integration tests): it never connected to greetd nor read the keyboard, so nobody could log in. The tests crate is no longer a default member, and a binary built with `test-harness` refuses to start with an explanation.
 - When ratgreet can't reach greetd (`GREETD_SOCK` unset, nothing listening) it restores the terminal and says so (`cannot connect to greetd at …`), instead of exiting with a bare `No such file or directory` and leaving a terminal emulator raw and in the alternate screen. Panics before the main loop restore the terminal too.
 - The cursor position no longer carries over from one field to the next or moves past the text: typed before a redraw, a password after moving the cursor in the username was entered scrambled (`secret` as `cretse`). Down in an empty session menu no longer underflows.
+- `[power]` commands with more than one space between words (or leading spaces, tabs) failed with "Command failed": each extra space became an empty argument, or an empty program name.
 
 ### Security
 

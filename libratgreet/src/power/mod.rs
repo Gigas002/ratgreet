@@ -27,12 +27,12 @@ pub async fn power(greeter: &mut Greeter, option: PowerOption) {
             let command = match greeter.power_setsid {
                 true => {
                     let mut command = Command::new("setsid");
-                    command.args(args.split(' '));
+                    command.args(args.split_whitespace());
                     command
                 }
 
                 false => {
-                    let mut args = args.split(' ');
+                    let mut args = args.split_whitespace();
 
                     let mut command = Command::new(args.next().unwrap_or_default());
                     command.args(args);
@@ -107,3 +107,6 @@ pub async fn run(greeter: &Arc<RwLock<Greeter>>, mut command: Command) -> PowerP
         PowerPostAction::Noop
     }
 }
+
+#[cfg(test)]
+mod tests;
