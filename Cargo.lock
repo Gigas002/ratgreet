@@ -935,6 +935,7 @@ dependencies = [
  "jiff",
  "libratgreet",
  "ratatui",
+ "rustix",
  "serde",
  "serde_ignored",
  "tempfile",

@@ -1,4 +1,4 @@
-use std::fs::OpenOptions;
+use std::{fs::OpenOptions, os::unix::fs::OpenOptionsExt};
 
 use libratgreet::Greeter;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -17,9 +17,14 @@ pub fn init(greeter: &Greeter, level: LogLevel) -> Option<WorkerGuard> {
     if !greeter.debug {
         return None;
     }
+    // The log names every user that tried to log in (and whatever was typed
+    // as a username, a password at times): readable by its owner only, and
+    // never through a symlink someone else planted in /tmp.
     let file = OpenOptions::new()
         .create(true)
         .append(true)
+        .mode(0o600)
+        .custom_flags(rustix::fs::OFlags::NOFOLLOW.bits() as i32)
         .open(&greeter.logfile)
         .ok()?;
     let (appender, guard) = tracing_appender::non_blocking(file);

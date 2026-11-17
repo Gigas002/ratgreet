@@ -26,6 +26,7 @@ jiff.workspace = true
 greetd_ipc.workspace = true
 tokio.workspace = true
 ratatui.workspace = true
+rustix = { workspace = true, features = ["fs"] }
 tracing-appender.workspace = true
 tracing-subscriber = "0.3"
 tracing.workspace = true
