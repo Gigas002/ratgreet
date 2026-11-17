@@ -7,7 +7,6 @@ publish = false
 [dev-dependencies]
 libratgreet = { path = "../libratgreet", features = ["test-harness"] }
 ratgreet = { path = "../ratgreet", features = ["test-harness"] }
-jiff.workspace = true
 greetd-stub = "0.3"
 tempfile.workspace = true
 unicode-width = "0.2"
