@@ -35,3 +35,15 @@ async fn commands_split_on_any_whitespace() {
         ["setsid", "systemctl", "poweroff"]
     );
 }
+
+/// A command that can't be started says which one it was.
+#[tokio::test]
+async fn a_missing_command_is_named() {
+    let greeter = std::sync::Arc::new(tokio::sync::RwLock::new(Greeter::default()));
+    let command = tokio::process::Command::new("/nonexistent/shutdown");
+    super::run(&greeter, command).await;
+    assert_eq!(
+        greeter.read().await.message.as_deref(),
+        Some("Command failed (/nonexistent/shutdown): No such file or directory (os error 2)")
+    );
+}

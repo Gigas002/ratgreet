@@ -89,7 +89,11 @@ pub async fn run(greeter: &Arc<RwLock<Greeter>>, mut command: Command) -> PowerP
             }
         },
 
-        Err(err) => Some(format!("{}: {err}", strings::get("command_failed"))),
+        Err(err) => Some(format!(
+            "{} ({}): {err}",
+            strings::get("command_failed"),
+            command.as_std().get_program().to_string_lossy()
+        )),
     };
 
     tracing::info!("power command exited with: {:?}", message);

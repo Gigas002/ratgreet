@@ -18,6 +18,7 @@
 - When ratgreet can't reach greetd (`GREETD_SOCK` unset, nothing listening) it restores the terminal and says so (`cannot connect to greetd at …`), instead of exiting with a bare `No such file or directory` and leaving a terminal emulator raw and in the alternate screen. Panics before the main loop restore the terminal too.
 - The cursor position no longer carries over from one field to the next or moves past the text: typed before a redraw, a password after moving the cursor in the username was entered scrambled (`secret` as `cretse`). Down in an empty session menu no longer underflows.
 - `[power]` commands with more than one space between words (or leading spaces, tabs) failed with "Command failed": each extra space became an empty argument, or an empty program name.
+- A power command that can't be started is named in the message (`Command failed (shutdown): No such file or directory`).
 
 ### Security
 
