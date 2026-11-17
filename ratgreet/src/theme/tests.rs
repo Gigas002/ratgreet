@@ -94,3 +94,19 @@ fn load_layered_ui_width() {
     let theme = load_layered(Some(&path));
     assert_eq!(theme.ui.width, 120);
 }
+
+/// Formats in use (the built-in clock, the example theme, `/etc/issue`'s
+/// date) are accepted; a broken one is rejected instead of failing at draw.
+#[test]
+fn time_formats_are_validated() {
+    for format in [
+        crate::ui::strings::DATE_FORMAT,
+        "%c",
+        "%a %b %_d %Y",
+        "%H:%M:%S",
+    ] {
+        let theme = parse(&format!("[ui]\ntime_format = \"{format}\"\n"));
+        assert!(theme.is_ok(), "{format}: {:?}", theme.err());
+    }
+    assert!(parse("[ui]\ntime_format = \"%H:%\"\n").is_err());
+}

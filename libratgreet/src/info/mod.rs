@@ -8,7 +8,6 @@ use std::{
     sync::LazyLock,
 };
 
-use chrono::Local;
 use ini::Ini;
 use rustix::system::uname;
 use tokio::process::Command;
@@ -116,12 +115,10 @@ fn expand_source(issue: &str, os_release: &HashMap<String, String>) -> String {
 
 pub fn get_issue() -> Option<String> {
     let (date, time) = {
-        let now = Local::now();
+        let now = jiff::ZonedDateTime::now();
+        let format = |f| jiff::fmt::strtime::format(f, &now).unwrap_or_default();
 
-        (
-            now.format("%a %b %_d %Y").to_string(),
-            now.format("%H:%M:%S").to_string(),
-        )
+        (format("%a %b %_d %Y"), format("%H:%M:%S"))
     };
 
     // `\U` in /etc/issue historically counts utmp logins; we no longer read utmp.

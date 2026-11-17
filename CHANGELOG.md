@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Dates and times are formatted with `jiff` instead of `chrono`, which is unmaintained (RUSTSEC-2026-0543). `[ui].time_format` still takes strftime formats; a format jiff can't print is rejected when the theme loads.
+
 ## 0.1.0 - 2026-09-04
 
 ### Changed

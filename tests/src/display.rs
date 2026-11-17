@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use chrono::Local;
 use libgreetd_stub::SessionOptions;
 use tempfile::tempdir;
 
@@ -118,7 +117,7 @@ async fn show_time() {
         mfa: false,
     };
 
-    let tref = Local::now().format(TIME_FORMAT).to_string();
+    let tref = jiff::fmt::strtime::format(TIME_FORMAT, &jiff::ZonedDateTime::now()).unwrap();
 
     let mut runner = IntegrationRunner::new(
         opts,

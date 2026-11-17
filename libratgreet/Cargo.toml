@@ -8,7 +8,7 @@ license.workspace = true
 test-harness = []
 
 [dependencies]
-chrono.workspace = true
+jiff.workspace = true
 greetd_ipc.workspace = true
 ratatui.workspace = true
 rustix.workspace = true

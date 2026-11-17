@@ -12,7 +12,6 @@ use std::{
     sync::Arc,
 };
 
-use chrono::prelude::*;
 use libratgreet::{Greeter, Mode, info::capslock_status, model::sessions::SessionSource};
 use ratatui::{
     Terminal,
@@ -174,7 +173,8 @@ fn get_time(greeter: &Greeter) -> String {
         None => Cow::Owned(strings::get("date")),
     };
 
-    Local::now().format(format.as_ref()).to_string()
+    // A bad format shows nothing rather than panicking (validated at load).
+    jiff::fmt::strtime::format(format.as_ref(), &jiff::ZonedDateTime::now()).unwrap_or_default()
 }
 
 fn status_label<'s, S>(theme: &Theme, text: S) -> Span<'s>

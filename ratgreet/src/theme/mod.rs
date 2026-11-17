@@ -244,13 +244,12 @@ impl ThemeFile {
             ));
         }
 
-        if let Some(format) = &self.ui.time_format {
-            use chrono::format::{Item, StrftimeItems};
-            if StrftimeItems::new(format).any(|item| item == Item::Error) {
-                return Err(ThemeError::Validation(
-                    "invalid strftime format in [ui].time_format".into(),
-                ));
-            }
+        if let Some(format) = &self.ui.time_format
+            && jiff::fmt::strtime::format(format.as_str(), &jiff::ZonedDateTime::now()).is_err()
+        {
+            return Err(ThemeError::Validation(
+                "invalid strftime format in [ui].time_format".into(),
+            ));
         }
 
         let fields = [
