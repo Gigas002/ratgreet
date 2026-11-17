@@ -6,6 +6,7 @@
 
 - Dates and times are formatted with `jiff` instead of `chrono`, which is unmaintained (RUSTSEC-2026-0543). `[ui].time_format` still takes strftime formats; a format jiff can't print is rejected when the theme loads.
 - `libratgreet`: `Greeter::connect` and `Greeter::reset` return `io::Result<()>` instead of exiting the process; `init_greeter` returns `Result<Greeter, String>`.
+- The CAPS LOCK indicator reads the console's keyboard flags with an ioctl instead of running `kbdinfo` on every redraw (about two processes a second while the login screen is idle); `kbd` is no longer needed for it.
 
 ### Fixed
 
