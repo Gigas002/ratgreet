@@ -36,6 +36,9 @@ pub struct Settings {
     pub theme: Theme,
     pub config_path: Option<PathBuf>,
     pub theme_path: Option<PathBuf>,
+    /// Problems found while reading the files (skipped files, unknown keys),
+    /// to be logged once logging is set up.
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -106,10 +109,13 @@ pub enum SettingsError {
 
 impl Settings {
     pub fn load(cli: &CliOverrides) -> Result<Self, SettingsError> {
-        let config = config::load_layered(cli.config.as_deref());
-        let theme_file = theme::load_layered(cli.theme.as_deref());
+        let mut warnings = Vec::new();
+        let config = config::load_layered_reporting(cli.config.as_deref(), &mut warnings);
+        let theme_file = theme::load_layered_reporting(cli.theme.as_deref(), &mut warnings);
         let theme = theme_file.to_ui_theme().unwrap_or_else(|err| {
-            tracing::warn!("theme conversion failed ({err}); using built-in defaults");
+            warnings.push(format!(
+                "theme conversion failed ({err}); using built-in defaults"
+            ));
             theme::ThemeFile::default()
                 .to_ui_theme()
                 .expect("default theme is always valid")
@@ -119,6 +125,7 @@ impl Settings {
         let theme_path = resolved_theme_path(cli.theme.as_deref());
 
         let mut settings = Self::from_layers(config, theme_file, theme, config_path, theme_path);
+        settings.warnings = warnings;
         settings.apply_cli(cli);
         Ok(settings)
     }
@@ -190,6 +197,7 @@ impl Settings {
             theme,
             config_path,
             theme_path,
+            warnings: Vec::new(),
         }
     }
 

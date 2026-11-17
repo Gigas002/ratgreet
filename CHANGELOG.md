@@ -11,6 +11,7 @@
 - Drawing no longer overflows when the theme's `width` or paddings don't fit the terminal: debug builds panicked, release builds drew the "Please wait..." screen off screen when `width` was wider than the console (80 columns on a VGA tty) and crashed in the session and power menus for `width` below 4.
 - A theme color with a non-ASCII character after `#` (`#aé123`) crashed ratgreet at start-up, leaving no login prompt; it is now rejected like any invalid color.
 - `--debug` logs libratgreet's events too (greetd requests and responses, sessions, power commands); only ratgreet's own few lines were written. `[logging].level` is now applied; it was ignored. Without `--debug` the log file is no longer created.
+- Problems with `config.toml` and `theme.toml` (a skipped invalid file, an unusable merged result) were logged before logging was set up, so never shown; they are now written to the `--debug` log, along with keys ratgreet doesn't know.
 
 ## 0.1.0 - 2026-09-04
 

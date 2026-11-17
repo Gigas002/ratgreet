@@ -105,3 +105,38 @@ width = 120
     assert_eq!(settings.ui.width, 120);
     assert_eq!(settings.theme_path, Some(theme_path));
 }
+
+#[test]
+fn file_problems_reach_the_settings() {
+    let dir = tempfile::tempdir().unwrap();
+    let theme_path = dir.path().join("theme.toml");
+    std::fs::write(&theme_path, "[ui]\nshow_clock = true\n").unwrap();
+    let cli = CliOverrides {
+        theme: Some(theme_path.clone()),
+        ..isolated()
+    };
+    let settings = Settings::load(&cli).unwrap();
+    assert_eq!(
+        settings.warnings,
+        [format!(
+            "{}: unknown key `ui.show_clock`",
+            theme_path.display()
+        )]
+    );
+}
+
+/// Every key the examples document is one ratgreet reads.
+#[test]
+fn the_examples_have_no_unknown_keys() {
+    let dir = tempfile::tempdir().unwrap();
+    let config_path = dir.path().join("config.toml");
+    let theme_path = dir.path().join("theme.toml");
+    std::fs::write(&config_path, EXAMPLE_CONFIG).unwrap();
+    std::fs::write(&theme_path, EXAMPLE_THEME).unwrap();
+    let cli = CliOverrides {
+        config: Some(config_path),
+        theme: Some(theme_path),
+        ..isolated()
+    };
+    assert_eq!(Settings::load(&cli).unwrap().warnings, Vec::<String>::new());
+}

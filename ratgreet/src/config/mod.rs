@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[cfg(test)]
 mod tests;
@@ -208,11 +208,17 @@ pub fn load_if_exists(path: &Path) -> Result<Option<Config>, ConfigError> {
 
 /// Merges config file(s) over built-in defaults.
 ///
-/// Missing, unreadable, invalid, or empty files are skipped with a warning; the
-/// result is always a valid [`Config`] (built-in defaults at minimum).
+/// Missing, unreadable, invalid, or empty files are skipped; the result is
+/// always a valid [`Config`] (built-in defaults at minimum).
 pub fn load_layered(override_path: Option<&Path>) -> Config {
+    load_layered_reporting(override_path, &mut Vec::new())
+}
+
+/// [`load_layered`], also collecting what went wrong (skipped files, unknown
+/// keys) in `warnings`: they are read before logging is set up.
+pub fn load_layered_reporting(override_path: Option<&Path>, warnings: &mut Vec<String>) -> Config {
     let Ok(mut value) = config_as_value(&Config::default()) else {
-        tracing::warn!("failed to serialize default config; using struct defaults");
+        warnings.push("failed to serialize default config; using struct defaults".into());
         return Config::default();
     };
 
@@ -222,28 +228,61 @@ pub fn load_layered(override_path: Option<&Path>) -> Config {
     };
 
     for path in paths {
-        merge_config_layer(&mut value, &path);
+        merge_config_layer(&mut value, &path, warnings);
     }
 
-    value_from_toml(value)
-        .ok()
-        .filter(|config| config.validate().is_ok())
-        .unwrap_or_else(|| {
-            tracing::warn!("merged config is invalid; using built-in defaults");
+    match value_from_toml(value) {
+        Ok(config) => config,
+        Err(err) => {
+            warnings.push(format!(
+                "merged config is invalid ({err}); using built-in defaults"
+            ));
             Config::default()
-        })
+        }
+    }
 }
 
-fn merge_config_layer(base: &mut toml::Value, path: &Path) {
-    match load_if_exists(path) {
-        Ok(Some(layer)) => match config_as_value(&layer) {
-            Ok(overlay) => merge_toml(base, overlay),
-            Err(err) => {
-                tracing::warn!(path = %path.display(), "ignoring config layer: {err}");
-            }
+fn merge_config_layer(base: &mut toml::Value, path: &Path, warnings: &mut Vec<String>) {
+    let layer = match std::fs::read_to_string(path) {
+        Ok(content) => parse_toml::<Config>(&content)
+            .map_err(ConfigError::Validation)
+            .and_then(|(layer, unknown)| {
+                layer.validate()?;
+                for key in unknown {
+                    warnings.push(format!("{}: unknown key `{key}`", path.display()));
+                }
+                config_as_value(&layer)
+            }),
+        Err(err) if err.kind() == io::ErrorKind::NotFound => return,
+        Err(err) => Err(ConfigError::Io(err)),
+    };
+    match layer {
+        Ok(overlay) => merge_toml(base, overlay),
+        Err(err) => warnings.push(format!("{}: ignored: {err}", path.display())),
+    }
+}
+
+/// Deserialize `raw`, returning the keys that were ignored as dotted paths.
+pub(crate) fn parse_toml<T: DeserializeOwned>(raw: &str) -> Result<(T, Vec<String>), String> {
+    let mut unknown = Vec::new();
+    let value = toml::Deserializer::parse(raw)
+        .and_then(|de| serde_ignored::deserialize(de, |key| unknown.push(key_path(&key))))
+        .map_err(|err| err.to_string().trim_end().to_string())?;
+    Ok((value, unknown))
+}
+
+fn key_path(path: &serde_ignored::Path<'_>) -> String {
+    use serde_ignored::Path;
+    match path {
+        Path::Root => String::new(),
+        Path::Seq { parent, index } => format!("{}[{index}]", key_path(parent)),
+        Path::Map { parent, key } => match key_path(parent) {
+            p if p.is_empty() => key.clone(),
+            p => format!("{p}.{key}"),
         },
-        Ok(None) => {}
-        Err(err) => tracing::warn!(path = %path.display(), "ignoring config layer: {err}"),
+        Path::Some { parent }
+        | Path::NewtypeStruct { parent }
+        | Path::NewtypeVariant { parent } => key_path(parent),
     }
 }
 

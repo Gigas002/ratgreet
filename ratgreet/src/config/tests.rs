@@ -106,3 +106,30 @@ fn example_config_file_on_disk() {
     let cfg = load(&path).unwrap();
     assert_eq!(cfg.secrets.display, SecretDisplayMode::default());
 }
+
+#[test]
+fn unknown_keys_and_skipped_files_are_reported() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.toml");
+    std::fs::write(
+        &path,
+        "[power]\nshutdown = \"poweroff\"\nreboot_cmd = \"reboot\"\n",
+    )
+    .unwrap();
+    let mut warnings = Vec::new();
+    let cfg = load_layered_reporting(Some(&path), &mut warnings);
+    assert_eq!(cfg.power.shutdown.as_deref(), Some("poweroff"));
+    assert_eq!(
+        warnings,
+        [format!(
+            "{}: unknown key `power.reboot_cmd`",
+            path.display()
+        )]
+    );
+
+    std::fs::write(&path, "[keybindings]\ncommand = 13\n").unwrap();
+    let mut warnings = Vec::new();
+    load_layered_reporting(Some(&path), &mut warnings);
+    assert_eq!(warnings.len(), 1, "{warnings:?}");
+    assert!(warnings[0].contains("ignored") && warnings[0].contains("between 1 and 12"));
+}

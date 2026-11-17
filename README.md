@@ -11,7 +11,7 @@ ratgreet connects to greetd over a Unix socket, draws a TUI login prompt, and st
 - **`config.toml`** — sessions, secrets, keybindings, power commands, logging defaults
 - **`theme.toml`** — layout, banner, clock, colors
 
-Missing, unreadable, invalid, or **empty** config/theme files are skipped; the greeter keeps running with defaults (warnings may appear when tracing is enabled). Set only the keys you care about; everything else stays at the default.
+Missing, unreadable, invalid, or **empty** config/theme files are skipped; the greeter keeps running with defaults. Set only the keys you care about; everything else stays at the default. Run with `--debug` to see why a file was skipped and which keys ratgreet doesn't know (a misspelled key otherwise silently does nothing).
 
 **Reference docs (commented examples):**
 

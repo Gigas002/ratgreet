@@ -159,11 +159,20 @@ pub fn load_if_exists(path: &Path) -> Result<Option<ThemeFile>, ThemeError> {
 
 /// Merges theme file(s) over built-in defaults.
 ///
-/// Missing, unreadable, invalid, or empty files are skipped with a warning; the
-/// result is always a valid [`ThemeFile`] (built-in defaults at minimum).
+/// Missing, unreadable, invalid, or empty files are skipped; the result is
+/// always a valid [`ThemeFile`] (built-in defaults at minimum).
 pub fn load_layered(override_path: Option<&Path>) -> ThemeFile {
+    load_layered_reporting(override_path, &mut Vec::new())
+}
+
+/// [`load_layered`], also collecting what went wrong (skipped files, unknown
+/// keys) in `warnings`: they are read before logging is set up.
+pub fn load_layered_reporting(
+    override_path: Option<&Path>,
+    warnings: &mut Vec<String>,
+) -> ThemeFile {
     let Ok(mut value) = theme_as_value(&ThemeFile::default()) else {
-        tracing::warn!("failed to serialize default theme; using struct defaults");
+        warnings.push("failed to serialize default theme; using struct defaults".into());
         return ThemeFile::default();
     };
 
@@ -173,28 +182,37 @@ pub fn load_layered(override_path: Option<&Path>) -> ThemeFile {
     };
 
     for path in paths {
-        merge_theme_layer(&mut value, &path);
+        merge_theme_layer(&mut value, &path, warnings);
     }
 
-    value_from_toml(value)
-        .ok()
-        .filter(|theme| theme.validate().is_ok())
-        .unwrap_or_else(|| {
-            tracing::warn!("merged theme is invalid; using built-in defaults");
+    match value_from_toml(value) {
+        Ok(theme) => theme,
+        Err(err) => {
+            warnings.push(format!(
+                "merged theme is invalid ({err}); using built-in defaults"
+            ));
             ThemeFile::default()
-        })
+        }
+    }
 }
 
-fn merge_theme_layer(base: &mut toml::Value, path: &Path) {
-    match load_if_exists(path) {
-        Ok(Some(layer)) => match theme_as_value(&layer) {
-            Ok(overlay) => merge_toml(base, overlay),
-            Err(err) => {
-                tracing::warn!(path = %path.display(), "ignoring theme layer: {err}");
-            }
-        },
-        Ok(None) => {}
-        Err(err) => tracing::warn!(path = %path.display(), "ignoring theme layer: {err}"),
+fn merge_theme_layer(base: &mut toml::Value, path: &Path, warnings: &mut Vec<String>) {
+    let layer = match std::fs::read_to_string(path) {
+        Ok(content) => crate::config::parse_toml::<ThemeFile>(&content)
+            .map_err(ThemeError::Validation)
+            .and_then(|(layer, unknown)| {
+                layer.validate()?;
+                for key in unknown {
+                    warnings.push(format!("{}: unknown key `{key}`", path.display()));
+                }
+                theme_as_value(&layer)
+            }),
+        Err(err) if err.kind() == io::ErrorKind::NotFound => return,
+        Err(err) => Err(ThemeError::Io(err)),
+    };
+    match layer {
+        Ok(overlay) => merge_toml(base, overlay),
+        Err(err) => warnings.push(format!("{}: ignored: {err}", path.display())),
     }
 }
 

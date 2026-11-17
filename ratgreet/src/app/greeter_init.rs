@@ -53,6 +53,9 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
     }
 
     greeter.logger = crate::logger::init(&greeter, settings.logging.level);
+    for warning in &settings.warnings {
+        tracing::warn!("{warning}");
+    }
 
     let sessions = get_sessions(&greeter).unwrap_or_default();
 
