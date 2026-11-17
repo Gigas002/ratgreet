@@ -98,7 +98,9 @@ impl IntegrationRunner {
         let theme = settings.theme.clone();
 
         let client = tokio::task::spawn(async move {
-            let mut greeter = init_greeter(events.sender(), &settings).await;
+            let mut greeter = init_greeter(events.sender(), &settings)
+                .await
+                .expect("greeter starts");
             greeter.session_source = SessionSource::Command("uname".to_string());
 
             if let Some(builder) = builder {
@@ -108,7 +110,7 @@ impl IntegrationRunner {
             greeter.logfile = "/tmp/ratgreet.log".to_string();
             greeter.socket = socket.to_str().unwrap().to_string();
             greeter.events = Some(events.sender());
-            greeter.connect().await;
+            greeter.connect().await.expect("greetd stub listens");
 
             let _ = app::run(backend, greeter, theme, events).await;
         });

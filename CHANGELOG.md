@@ -5,6 +5,7 @@
 ### Changed
 
 - Dates and times are formatted with `jiff` instead of `chrono`, which is unmaintained (RUSTSEC-2026-0543). `[ui].time_format` still takes strftime formats; a format jiff can't print is rejected when the theme loads.
+- `libratgreet`: `Greeter::connect` and `Greeter::reset` return `io::Result<()>` instead of exiting the process; `init_greeter` returns `Result<Greeter, String>`.
 
 ### Fixed
 
@@ -13,6 +14,7 @@
 - `--debug` logs libratgreet's events too (greetd requests and responses, sessions, power commands); only ratgreet's own few lines were written. `[logging].level` is now applied; it was ignored. Without `--debug` the log file is no longer created.
 - Problems with `config.toml` and `theme.toml` (a skipped invalid file, an unusable merged result) were logged before logging was set up, so never shown; they are now written to the `--debug` log, along with keys ratgreet doesn't know.
 - `cargo build --release` at the workspace root produced a greeter with the `test-harness` feature (unified in from the integration tests): it never connected to greetd nor read the keyboard, so nobody could log in. The tests crate is no longer a default member, and a binary built with `test-harness` refuses to start with an explanation.
+- When ratgreet can't reach greetd (`GREETD_SOCK` unset, nothing listening) it restores the terminal and says so (`cannot connect to greetd at …`), instead of exiting with a bare `No such file or directory` and leaving a terminal emulator raw and in the alternate screen. Panics before the main loop restore the terminal too.
 
 ## 0.1.0 - 2026-09-04
 

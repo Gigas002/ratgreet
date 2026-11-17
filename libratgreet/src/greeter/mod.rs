@@ -3,8 +3,8 @@ mod align;
 use std::{
     error::Error,
     fmt::{self, Display},
+    io,
     path::PathBuf,
-    process,
     sync::Arc,
 };
 
@@ -221,8 +221,8 @@ impl Greeter {
         }
     }
 
-    // Reset the software to its initial state.
-    pub async fn reset(&mut self, soft: bool) {
+    // Reset the software to its initial state, on a new connection to greetd.
+    pub async fn reset(&mut self, soft: bool) -> io::Result<()> {
         if soft {
             self.mode = Mode::Password;
             self.previous_mode = Mode::Password;
@@ -235,19 +235,19 @@ impl Greeter {
         self.done = false;
 
         self.scrub(false, soft);
-        self.connect().await;
+        self.connect().await
     }
 
-    // Connect to `greetd` and return a stream we can safely write to.
-    pub async fn connect(&mut self) {
-        match UnixStream::connect(&self.socket).await {
-            Ok(stream) => self.stream = Some(Arc::new(RwLock::new(stream))),
-
-            Err(err) => {
-                eprintln!("{err}");
-                process::exit(1);
-            }
-        }
+    // Connect to `greetd`, keeping a stream we can safely write to.
+    pub async fn connect(&mut self) -> io::Result<()> {
+        let stream = UnixStream::connect(&self.socket).await.map_err(|err| {
+            io::Error::new(
+                err.kind(),
+                format!("cannot connect to greetd at {}: {err}", self.socket),
+            )
+        })?;
+        self.stream = Some(Arc::new(RwLock::new(stream)));
+        Ok(())
     }
 
     pub async fn stream(&self) -> RwLockWriteGuard<'_, UnixStream> {

@@ -28,3 +28,14 @@ fn test_set_prompt() {
 
     assert_eq!(greeter.prompt, None);
 }
+
+#[tokio::test]
+async fn a_failed_connection_says_where() {
+    let mut greeter = Greeter::default();
+    greeter.socket = "/nonexistent/greetd.sock".into();
+    let err = greeter.connect().await.unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "cannot connect to greetd at /nonexistent/greetd.sock: No such file or directory (os error 2)"
+    );
+}

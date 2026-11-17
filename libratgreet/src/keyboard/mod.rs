@@ -76,7 +76,7 @@ pub async fn handle(
 
             _ => {
                 Ipc::cancel(&mut greeter).await;
-                greeter.reset(false).await;
+                greeter.reset(false).await?;
             }
         },
 
