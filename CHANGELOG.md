@@ -6,6 +6,10 @@
 
 - Dates and times are formatted with `jiff` instead of `chrono`, which is unmaintained (RUSTSEC-2026-0543). `[ui].time_format` still takes strftime formats; a format jiff can't print is rejected when the theme loads.
 
+### Fixed
+
+- Drawing no longer overflows when the theme's `width` or paddings don't fit the terminal: debug builds panicked, release builds drew the "Please wait..." screen off screen when `width` was wider than the console (80 columns on a VGA tty) and crashed in the session and power menus for `width` below 4.
+
 ## 0.1.0 - 2026-09-04
 
 ### Changed

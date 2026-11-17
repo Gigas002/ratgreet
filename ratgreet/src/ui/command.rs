@@ -29,8 +29,8 @@ pub fn draw(
     let frame = Rect::new(
         x + container_padding,
         y + container_padding,
-        width - container_padding,
-        height - container_padding,
+        width.saturating_sub(container_padding),
+        height.saturating_sub(container_padding),
     );
 
     let block = Block::default()

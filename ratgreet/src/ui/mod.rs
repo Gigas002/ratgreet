@@ -83,8 +83,10 @@ where
 
         let status_block_size_right =
             1 + greeter.window_padding() + strings::get("status_caps").chars().count() as u16;
-        let status_block_size_left =
-            (size.width - greeter.window_padding()) - status_block_size_right;
+        let status_block_size_left = size
+            .width
+            .saturating_sub(greeter.window_padding())
+            .saturating_sub(status_block_size_right);
 
         let status_chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -232,3 +234,6 @@ where
 {
     Span::styled(text.into(), theme.of(&[Themed::Text]))
 }
+
+#[cfg(test)]
+mod tests;
