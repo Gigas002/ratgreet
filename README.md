@@ -52,4 +52,4 @@ GREETD_SOCK=/tmp/greetd.sock cargo run -p ratgreet -- \
 
 Debug builds run `true` after login; release builds need `[session] cmd` in config when you add one. See [`examples/cli.md`](examples/cli.md).
 
-The `test-harness` Cargo feature is enabled only by the `ratgreet-tests` crate for in-memory integration tests — not for packagers or manual runs.
+The `test-harness` Cargo feature is enabled only by the `ratgreet-tests` crate for in-memory integration tests — not for packagers or manual runs. Package with `cargo build --release` or `cargo build --release -p ratgreet`: `cargo build --workspace` unifies `test-harness` into the binary, which then refuses to start.

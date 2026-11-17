@@ -12,6 +12,7 @@
 - A theme color with a non-ASCII character after `#` (`#aé123`) crashed ratgreet at start-up, leaving no login prompt; it is now rejected like any invalid color.
 - `--debug` logs libratgreet's events too (greetd requests and responses, sessions, power commands); only ratgreet's own few lines were written. `[logging].level` is now applied; it was ignored. Without `--debug` the log file is no longer created.
 - Problems with `config.toml` and `theme.toml` (a skipped invalid file, an unusable merged result) were logged before logging was set up, so never shown; they are now written to the `--debug` log, along with keys ratgreet doesn't know.
+- `cargo build --release` at the workspace root produced a greeter with the `test-harness` feature (unified in from the integration tests): it never connected to greetd nor read the keyboard, so nobody could log in. The tests crate is no longer a default member, and a binary built with `test-harness` refuses to start with an explanation.
 
 ## 0.1.0 - 2026-09-04
 

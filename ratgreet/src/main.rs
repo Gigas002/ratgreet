@@ -8,6 +8,18 @@ use ratgreet::{app, cli::Cli, settings};
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
+
+    // `cargo build --workspace` unifies the `test-harness` feature (enabled by
+    // the integration tests) into this binary: it would then never connect to
+    // greetd nor read the keyboard, and nobody could log in.
+    if cfg!(feature = "test-harness") {
+        eprintln!(
+            "this ratgreet was built with the test-harness feature and cannot greet; \
+             build it with `cargo build --release -p ratgreet`"
+        );
+        process::exit(1);
+    }
+
     let settings = match settings::Settings::load(&(&cli).into()) {
         Ok(settings) => settings,
         Err(err) => {

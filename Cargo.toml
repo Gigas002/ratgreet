@@ -1,5 +1,8 @@
 [workspace]
 members = ["libratgreet", "ratgreet", "tests"]
+# `tests` turns on ratgreet's `test-harness` feature; building it by default
+# would unify that feature into the greeter binary (see ratgreet/src/main.rs).
+default-members = ["libratgreet", "ratgreet"]
 resolver = "3"
 
 [workspace.package]
