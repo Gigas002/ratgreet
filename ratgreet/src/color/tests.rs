@@ -29,3 +29,12 @@ fn hex_rrggbbaa_ignores_alpha() {
 fn invalid_hex() {
     assert!(parse_css_color("#gggggg").is_err());
 }
+
+/// Byte-length checks with multi-byte characters used to slice inside a
+/// character and panic, crashing the greeter at start-up.
+#[test]
+fn rejects_non_ascii_hex() {
+    for color in ["#aé123", "#éé", "#a€", "#aaaé1", "#ééé", "#aaaaaaé"] {
+        assert!(parse_css_color(color).is_err(), "{color}");
+    }
+}

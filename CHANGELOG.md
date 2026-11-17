@@ -9,6 +9,7 @@
 ### Fixed
 
 - Drawing no longer overflows when the theme's `width` or paddings don't fit the terminal: debug builds panicked, release builds drew the "Please wait..." screen off screen when `width` was wider than the console (80 columns on a VGA tty) and crashed in the session and power menus for `width` below 4.
+- A theme color with a non-ASCII character after `#` (`#aé123`) crashed ratgreet at start-up, leaving no login prompt; it is now rejected like any invalid color.
 
 ## 0.1.0 - 2026-09-04
 
