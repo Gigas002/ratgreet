@@ -86,16 +86,21 @@ impl IntegrationRunner {
             }
         });
 
+        // Missing files rather than `None`, so the host's /etc/ratgreet and
+        // ~/.config/ratgreet files never reach a test.
+        let missing = |name: &str| PathBuf::from("/nonexistent/ratgreet").join(name);
         let settings = Settings::load(&CliOverrides {
-            config,
-            theme,
+            config: Some(config.unwrap_or_else(|| missing("config.toml"))),
+            theme: Some(theme.unwrap_or_else(|| missing("theme.toml"))),
             ..CliOverrides::default()
         })
         .expect("integration config must load");
         let theme = settings.theme.clone();
 
         let client = tokio::task::spawn(async move {
-            let mut greeter = init_greeter(events.sender(), &settings).await;
+            let mut greeter = init_greeter(events.sender(), &settings)
+                .await
+                .expect("greeter starts");
             greeter.session_source = SessionSource::Command("uname".to_string());
 
             if let Some(builder) = builder {
@@ -105,7 +110,7 @@ impl IntegrationRunner {
             greeter.logfile = "/tmp/ratgreet.log".to_string();
             greeter.socket = socket.to_str().unwrap().to_string();
             greeter.events = Some(events.sender());
-            greeter.connect().await;
+            greeter.connect().await.expect("greetd stub listens");
 
             let _ = app::run(backend, greeter, theme, events).await;
         });

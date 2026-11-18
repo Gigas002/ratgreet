@@ -24,7 +24,7 @@ pub struct Cli {
     #[arg(long, value_name = "PATH")]
     pub theme: Option<PathBuf>,
 
-    /// Enable tracing; optional log file (default from config or `/tmp/ratgreet.log`).
+    /// Enable tracing; optional log file (default from config or `/var/log/ratgreet/ratgreet.log`).
     #[arg(
         short = 'd',
         long = "debug",

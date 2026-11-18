@@ -1,6 +1,3 @@
-use std::time::Duration;
-
-use chrono::Local;
 use libgreetd_stub::SessionOptions;
 use tempfile::tempdir;
 
@@ -98,50 +95,6 @@ greeting = "Configured greeting"
         async move {
             runner.wait_for_render().await;
             assert!(runner.output().await.contains("Configured greeting"));
-        }
-    });
-
-    runner.join_until_end(events).await;
-}
-
-const TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
-
-// TODO
-// This could create a race condition if we do not mock time, because we rely on
-// being at the same second between the test instantiation and the tasks
-// running, which is not guaranteed.
-#[tokio::test]
-async fn show_time() {
-    let opts = SessionOptions {
-        username: "apognu".to_string(),
-        password: "password".to_string(),
-        mfa: false,
-    };
-
-    let tref = Local::now().format(TIME_FORMAT).to_string();
-
-    let mut runner = IntegrationRunner::new(
-        opts,
-        Some(|greeter| {
-            greeter.time = true;
-            greeter.time_format = Some(TIME_FORMAT.to_string());
-        }),
-    )
-    .await;
-
-    let events = tokio::task::spawn({
-        let mut runner = runner.clone();
-
-        async move {
-            runner.wait_for_render().await;
-
-            assert!(runner.output().await.contains(&tref));
-
-            tokio::time::sleep(Duration::from_secs(1)).await;
-
-            runner.wait_for_render().await;
-
-            assert!(!runner.output().await.contains(&tref));
         }
     });
 

@@ -52,3 +52,11 @@ fn expand_source_unknown_field_expands_to_nothing() {
 
     assert_eq!(issue, "[]");
 }
+
+/// Off a console (a file, a pipe, a terminal emulator) there is no caps lock
+/// state to read, and nothing fails.
+#[test]
+fn capslock_off_a_console_is_off() {
+    let file = tempfile::tempfile().unwrap();
+    assert!(!super::capslock_status_of(&file));
+}

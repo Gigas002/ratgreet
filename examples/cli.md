@@ -11,7 +11,7 @@ The binary exposes only flags operators need at startup. Everything else lives i
 | `-V` | `--version` | Print version and exit |
 | | `--config PATH` | Load config from `PATH` only (see resolution below) |
 | | `--theme PATH` | Load theme from `PATH` only |
-| `-d` | `--debug [FILE]` | Enable tracing; optional log file (default `/tmp/ratgreet.log` or `[logging].file`) |
+| `-d` | `--debug [FILE]` | Enable tracing; optional log file (default `/var/log/ratgreet/ratgreet.log` or `[logging].file`) |
 
 There are no subcommands.
 

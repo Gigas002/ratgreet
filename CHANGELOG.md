@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - Unreleased
+
+### Changed
+
+- Dates and times are formatted with `jiff` instead of `chrono`, which is unmaintained (RUSTSEC-2026-0543). `[ui].time_format` still takes strftime formats; a format jiff can't print is rejected when the theme loads.
+- `libratgreet`: `Greeter::connect` and `Greeter::reset` return `io::Result<()>` instead of exiting the process; `init_greeter` returns `Result<Greeter, String>`.
+- The CAPS LOCK indicator reads the console's keyboard flags with an ioctl instead of running `kbdinfo` on every redraw (about two processes a second while the login screen is idle); `kbd` is no longer needed for it.
+
+### Fixed
+
+- Drawing no longer overflows when the theme's `width` or paddings don't fit the terminal: debug builds panicked, release builds drew the "Please wait..." screen off screen when `width` was wider than the console (80 columns on a VGA tty) and crashed in the session and power menus for `width` below 4.
+- A theme color with a non-ASCII character after `#` (`#aé123`) crashed ratgreet at start-up, leaving no login prompt; it is now rejected like any invalid color.
+- `--debug` logs libratgreet's events too (greetd requests and responses, sessions, power commands); only ratgreet's own few lines were written. `[logging].level` is now applied; it was ignored. Without `--debug` the log file is no longer created.
+- Problems with `config.toml` and `theme.toml` (a skipped invalid file, an unusable merged result) were logged before logging was set up, so never shown; they are now written to the `--debug` log, along with keys ratgreet doesn't know.
+- `cargo build --release` at the workspace root produced a greeter with the `test-harness` feature (unified in from the integration tests): it never connected to greetd nor read the keyboard, so nobody could log in. The tests crate's dependencies are dev-dependencies now, so only `cargo test` builds enable it, and a binary built with `test-harness` refuses to start with an explanation.
+- When ratgreet can't reach greetd (`GREETD_SOCK` unset, nothing listening) it restores the terminal and says so (`cannot connect to greetd at …`), instead of exiting with a bare `No such file or directory` and leaving a terminal emulator raw and in the alternate screen. Panics before the main loop restore the terminal too.
+- The cursor position no longer carries over from one field to the next or moves past the text: typed before a redraw, a password after moving the cursor in the username was entered scrambled (`secret` as `cretse`). Down in an empty session menu no longer underflows.
+- `[power]` commands with more than one space between words (or leading spaces, tabs) failed with "Command failed": each extra space became an empty argument, or an empty program name.
+- A power command that can't be started is named in the message (`Command failed (shutdown): No such file or directory`).
+
+### Security
+
+- Typing and deleting edit the username, password and command in place, and cleared fields are zeroized, so fewer copies of a password are left in freed memory.
+- The `--debug` log names everyone who tried to log in. Its default moved from world-writable `/tmp/ratgreet.log` to `/var/log/ratgreet/ratgreet.log`; packages should install `dist/tmpfiles.conf` as `/usr/lib/tmpfiles.d/ratgreet.conf` to create that directory for the `greeter` user. Wherever it is, a new log file is readable by its owner only, and a symlink at its path is refused instead of followed.
 
 ## 0.1.0 - 2026-09-04
 

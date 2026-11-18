@@ -11,7 +11,7 @@ ratgreet connects to greetd over a Unix socket, draws a TUI login prompt, and st
 - **`config.toml`** — sessions, secrets, keybindings, power commands, logging defaults
 - **`theme.toml`** — layout, banner, clock, colors
 
-Missing, unreadable, invalid, or **empty** config/theme files are skipped; the greeter keeps running with defaults (warnings may appear when tracing is enabled). Set only the keys you care about; everything else stays at the default.
+Missing, unreadable, invalid, or **empty** config/theme files are skipped; the greeter keeps running with defaults. Set only the keys you care about; everything else stays at the default. Run with `--debug` to see why a file was skipped and which keys ratgreet doesn't know (a misspelled key otherwise silently does nothing).
 
 **Reference docs (commented examples):**
 
@@ -50,6 +50,8 @@ GREETD_SOCK=/tmp/greetd.sock cargo run -p ratgreet -- \
   --theme examples/theme.toml
 ```
 
+With `--debug`, ratgreet logs to `/var/log/ratgreet/ratgreet.log` (or `--debug FILE`, `[logging].file`). The greeter user can't create that directory: packages install [`dist/tmpfiles.conf`](dist/tmpfiles.conf) as `/usr/lib/tmpfiles.d/ratgreet.conf`, which creates it owned by `greeter` (change the user if your greetd runs the greeter as someone else). Without a writable log file, `--debug` logs nothing.
+
 Debug builds run `true` after login; release builds need `[session] cmd` in config when you add one. See [`examples/cli.md`](examples/cli.md).
 
-The `test-harness` Cargo feature is enabled only by the `ratgreet-tests` crate for in-memory integration tests — not for packagers or manual runs.
+The `test-harness` Cargo feature is enabled only by the `ratgreet-tests` crate for in-memory integration tests — not for packagers or manual runs. A binary built by `cargo test` carries it and refuses to start; package the one from `cargo build --release`.

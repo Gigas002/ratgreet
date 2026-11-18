@@ -153,14 +153,14 @@ impl Ipc {
                             Ipc::cancel(greeter).await;
 
                             greeter.message = Some(strings::get("command_missing"));
-                            greeter.reset(false).await;
+                            greeter.reset(false).await?;
                         }
 
                         Some(command) if command.is_empty() => {
                             Ipc::cancel(greeter).await;
 
                             greeter.message = Some(strings::get("command_missing"));
-                            greeter.reset(false).await;
+                            greeter.reset(false).await?;
                         }
 
                         Some(command) => {
@@ -206,13 +206,13 @@ impl Ipc {
                             username: greeter.username.value.clone(),
                         })
                         .await;
-                        greeter.reset(true).await;
+                        greeter.reset(true).await?;
                     }
 
                     ErrorType::Error => {
                         // Do not display actual message from greetd, which may contain entered information, sometimes passwords.
                         greeter.message = Some("An error was received from greetd".to_string());
-                        greeter.reset(false).await;
+                        greeter.reset(false).await?;
                     }
                 }
             }

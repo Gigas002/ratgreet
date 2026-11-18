@@ -8,10 +8,8 @@ use std::{
     sync::LazyLock,
 };
 
-use chrono::Local;
 use ini::Ini;
 use rustix::system::uname;
-use tokio::process::Command;
 
 use crate::{
     Greeter,
@@ -116,12 +114,10 @@ fn expand_source(issue: &str, os_release: &HashMap<String, String>) -> String {
 
 pub fn get_issue() -> Option<String> {
     let (date, time) = {
-        let now = Local::now();
+        let now = jiff::ZonedDateTime::now();
+        let format = |f| jiff::fmt::strtime::format(f, &now).unwrap_or_default();
 
-        (
-            now.format("%a %b %_d %Y").to_string(),
-            now.format("%H:%M:%S").to_string(),
-        )
+        (format("%a %b %_d %Y"), format("%H:%M:%S"))
     };
 
     // `\U` in /etc/issue historically counts utmp logins; we no longer read utmp.
@@ -247,19 +243,23 @@ where
     }))
 }
 
-// Checks caps lock state by shelling out to `kbdinfo`. This runs the subprocess via
-// `tokio::process::Command` (rather than `std::process::Command`) so callers can `.await`
-// it instead of blocking the calling task/thread — this is polled from the render path
-// roughly twice a second, and a blocking fork/exec there would stall rendering, keyboard
-// dispatch and IPC on the same worker thread for its duration.
+/// Whether caps lock is on, from the console's keyboard flags (`KDGKBLED`,
+/// what `kbdinfo gkbled capslock` asks). Called on every redraw, so it is an
+/// ioctl on stdin rather than a process; stdin is the VT under greetd, and
+/// anything else (a terminal emulator) reports `false`.
 pub async fn capslock_status() -> bool {
-    let mut command = Command::new("kbdinfo");
-    command.args(["gkbled", "capslock"]);
+    capslock_status_of(std::io::stdin())
+}
 
-    match command.output().await {
-        Ok(output) => output.status.code() == Some(0),
-        Err(_) => false,
-    }
+/// [`capslock_status`] for the console behind `fd`.
+pub fn capslock_status_of(fd: impl std::os::fd::AsFd) -> bool {
+    /// `KDGKBLED` from `linux/kd.h`, and its caps lock flag `K_CAPSLOCK`.
+    const KDGKBLED: rustix::ioctl::Opcode = 0x4B64;
+    const K_CAPSLOCK: u8 = 0x04;
+
+    // SAFETY: KDGKBLED writes a single `char` of flags into the output.
+    let flags = unsafe { rustix::ioctl::ioctl(fd, rustix::ioctl::Getter::<KDGKBLED, u8>::new()) };
+    flags.is_ok_and(|flags| flags & K_CAPSLOCK != 0)
 }
 
 #[cfg(test)]

@@ -66,8 +66,6 @@ where
 {
     tracing::info!("ratgreet started");
 
-    register_panic_handler();
-
     let mut terminal = Terminal::new(backend)?;
 
     #[cfg(all(not(test), not(feature = "test-harness")))]
@@ -83,7 +81,9 @@ where
 
         async move {
             loop {
-                let _ = ipc.handle(greeter.clone()).await;
+                if let Err(err) = ipc.handle(greeter.clone()).await {
+                    tracing::error!("greetd request failed: {err}");
+                }
             }
         }
     });
@@ -140,7 +140,9 @@ pub async fn exit(greeter: &mut Greeter, status: AuthStatus) {
     greeter.exit = Some(status);
 }
 
-fn register_panic_handler() {
+/// Restore the terminal before a panic message is printed. Install it before
+/// [`prepare_terminal`].
+pub fn register_panic_handler() {
     let hook = std::panic::take_hook();
 
     std::panic::set_hook(Box::new(move |info| {
@@ -152,6 +154,17 @@ fn register_panic_handler() {
 
         hook(info);
     }));
+}
+
+/// Undo [`prepare_terminal`] on a failed start or run, so the error that
+/// follows is readable (a terminal emulator would otherwise stay raw).
+pub fn restore_terminal() {
+    let _ = execute!(
+        io::stdout(),
+        LeaveAlternateScreen,
+        ratatui::crossterm::cursor::Show
+    );
+    let _ = disable_raw_mode();
 }
 
 #[cfg(all(not(test), not(feature = "test-harness")))]

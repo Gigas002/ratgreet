@@ -3,6 +3,7 @@ use std::{error::Error, sync::Arc};
 use greetd_ipc::Request;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tokio::sync::RwLock;
+use zeroize::Zeroize;
 
 use crate::{
     Greeter, Mode,
@@ -37,12 +38,14 @@ pub async fn handle(
             code: KeyCode::Char('u'),
             modifiers: KeyModifiers::CONTROL,
             ..
-        } => match greeter.mode {
-            Mode::Username => greeter.username = MaskedString::default(),
-            Mode::Password => greeter.buffer = String::new(),
-            Mode::Command => greeter.buffer = String::new(),
-            _ => {}
-        },
+        } => {
+            match greeter.mode {
+                Mode::Username => greeter.username = MaskedString::default(),
+                Mode::Password | Mode::Command => greeter.buffer.zeroize(),
+                _ => {}
+            }
+            greeter.cursor_offset = 0;
+        }
 
         // In debug mode only, ^X will exit the application.
         #[cfg(debug_assertions)]
@@ -76,19 +79,22 @@ pub async fn handle(
 
             _ => {
                 Ipc::cancel(&mut greeter).await;
-                greeter.reset(false).await;
+                greeter.reset(false).await?;
             }
         },
 
-        // Simple cursor directions in text fields.
+        // Simple cursor directions in text fields, kept within the text.
         KeyEvent {
             code: KeyCode::Left,
             ..
-        } => greeter.cursor_offset -= 1,
+        } => {
+            let len = field(&greeter).map_or(0, |value| value.chars().count() as i16);
+            greeter.cursor_offset = (greeter.cursor_offset - 1).max(-len);
+        }
         KeyEvent {
             code: KeyCode::Right,
             ..
-        } => greeter.cursor_offset += 1,
+        } => greeter.cursor_offset = (greeter.cursor_offset + 1).min(0),
 
         // F2 will display the command entry prompt. If we are already in one of the
         // popup screens, we set the previous screen as being the current previous
@@ -166,13 +172,13 @@ pub async fn handle(
             ..
         } => {
             if let Mode::Sessions = greeter.mode
-                && greeter.sessions.selected < greeter.sessions.options.len() - 1
+                && greeter.sessions.selected + 1 < greeter.sessions.options.len()
             {
                 greeter.sessions.selected += 1;
             }
 
             if let Mode::Power = greeter.mode
-                && greeter.powers.selected < greeter.powers.options.len() - 1
+                && greeter.powers.selected + 1 < greeter.powers.options.len()
             {
                 greeter.powers.selected += 1;
             }
@@ -231,7 +237,8 @@ pub async fn handle(
                 })
                 .await;
 
-                greeter.buffer = String::new();
+                greeter.buffer.zeroize();
+                greeter.cursor_offset = 0;
             }
 
             Mode::Command => {
@@ -240,6 +247,7 @@ pub async fn handle(
 
                 greeter.buffer = greeter.previous_buffer.take().unwrap_or_default();
                 greeter.mode = greeter.previous_mode;
+                greeter.cursor_offset = 0;
             }
 
             Mode::Sessions => {
@@ -297,64 +305,69 @@ pub async fn handle(
     Ok(())
 }
 
+// The text field the current mode edits.
+fn field(greeter: &Greeter) -> Option<&String> {
+    match greeter.mode {
+        Mode::Username => Some(&greeter.username.value),
+        Mode::Password | Mode::Command => Some(&greeter.buffer),
+        _ => None,
+    }
+}
+
+// The cursor's position in `value`, as a character index from its start.
+fn cursor_index(value: &str, cursor_offset: i16) -> usize {
+    let len = value.chars().count() as i16;
+    (len + cursor_offset).clamp(0, len) as usize
+}
+
+// Byte offset of character `index` in `value` (its length past the end).
+fn byte_index(value: &str, index: usize) -> usize {
+    value
+        .char_indices()
+        .nth(index)
+        .map_or(value.len(), |(i, _)| i)
+}
+
 // Handle insertion of characters into the proper buffer, depending on the
-// current mode and the position of the cursor.
+// current mode and the position of the cursor. The string is edited in
+// place, so no copies of a password are left behind in freed memory (unless
+// it grows past its capacity).
 async fn insert_key(greeter: &mut Greeter, c: char) {
+    let offset = greeter.cursor_offset;
     let value = match greeter.mode {
-        Mode::Username => &greeter.username.value,
-        Mode::Password => &greeter.buffer,
-        Mode::Command => &greeter.buffer,
+        Mode::Username => &mut greeter.username.value,
+        Mode::Password | Mode::Command => &mut greeter.buffer,
         _ => return,
     };
 
-    let index = (value.chars().count() as i16 + greeter.cursor_offset) as usize;
-    let left = value.chars().take(index);
-    let right = value.chars().skip(index);
-
-    let value = left.chain(vec![c]).chain(right).collect();
-    let mode = greeter.mode;
-
-    match mode {
-        Mode::Username => greeter.username.value = value,
-        Mode::Password => greeter.buffer = value,
-        Mode::Command => greeter.buffer = value,
-        _ => {}
-    };
+    let at = byte_index(value, cursor_index(value, offset));
+    value.insert(at, c);
 }
 
 // Handle deletion of characters from a prompt into the proper buffer, depending
 // on the current mode, whether Backspace or Delete was pressed and the position
 // of the cursor.
 async fn delete_key(greeter: &mut Greeter, key: KeyCode) {
+    let offset = greeter.cursor_offset;
     let value = match greeter.mode {
-        Mode::Username => &greeter.username.value,
-        Mode::Password => &greeter.buffer,
-        Mode::Command => &greeter.buffer,
+        Mode::Username => &mut greeter.username.value,
+        Mode::Password | Mode::Command => &mut greeter.buffer,
         _ => return,
     };
 
+    let cursor = cursor_index(value, offset);
     let index = match key {
-        KeyCode::Backspace => (value.chars().count() as i16 + greeter.cursor_offset - 1) as usize,
-        KeyCode::Delete => (value.chars().count() as i16 + greeter.cursor_offset) as usize,
-        _ => 0,
+        KeyCode::Backspace if cursor > 0 => cursor - 1,
+        KeyCode::Delete if cursor < value.chars().count() => cursor,
+        _ => return,
     };
 
-    if value.chars().nth(index).is_some() {
-        let left = value.chars().take(index);
-        let right = value.chars().skip(index + 1);
+    value.remove(byte_index(value, index));
 
-        let value = left.chain(right).collect();
-
-        match greeter.mode {
-            Mode::Username => greeter.username.value = value,
-            Mode::Password => greeter.buffer = value,
-            Mode::Command => greeter.buffer = value,
-            _ => return,
-        };
-
-        if let KeyCode::Delete = key {
-            greeter.cursor_offset += 1;
-        }
+    // Delete removes the character after the cursor: the cursor keeps its
+    // place, now one character closer to the end.
+    if let KeyCode::Delete = key {
+        greeter.cursor_offset += 1;
     }
 }
 
@@ -367,7 +380,8 @@ async fn validate_username(greeter: &mut Greeter, ipc: &Ipc) {
         username: greeter.username.value.clone(),
     })
     .await;
-    greeter.buffer = String::new();
+    greeter.buffer.zeroize();
+    greeter.cursor_offset = 0;
 }
 
 #[cfg(test)]

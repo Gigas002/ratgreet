@@ -4,10 +4,9 @@ version.workspace = true
 edition.workspace = true
 publish = false
 
-[dependencies]
+[dev-dependencies]
 libratgreet = { path = "../libratgreet", features = ["test-harness"] }
 ratgreet = { path = "../ratgreet", features = ["test-harness"] }
-chrono.workspace = true
 greetd-stub = "0.3"
 tempfile.workspace = true
 unicode-width = "0.2"

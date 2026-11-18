@@ -41,8 +41,8 @@ pub fn draw(
     let frame = Rect::new(
         x + container_padding,
         y + container_padding,
-        width - (2 * container_padding),
-        height - (2 * container_padding),
+        width.saturating_sub(2 * container_padding),
+        height.saturating_sub(2 * container_padding),
     );
 
     let hostname = Span::from(titleize(&strings::title_authenticate(&get_hostname())));

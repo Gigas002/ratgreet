@@ -8,6 +8,18 @@ use ratgreet::{app, cli::Cli, settings};
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
+
+    // The integration tests enable `test-harness`, and Cargo unifies features
+    // in a build: a binary from a test build would never connect to greetd
+    // nor read the keyboard, and nobody could log in.
+    if cfg!(feature = "test-harness") {
+        eprintln!(
+            "this ratgreet was built with the test-harness feature and cannot greet; \
+             build it with `cargo build --release -p ratgreet`"
+        );
+        process::exit(1);
+    }
+
     let settings = match settings::Settings::load(&(&cli).into()) {
         Ok(settings) => settings,
         Err(err) => {
@@ -16,7 +28,9 @@ async fn main() {
         }
     };
 
+    app::register_panic_handler();
     if let Err(err) = app::prepare_terminal() {
+        app::restore_terminal();
         eprintln!("failed to initialize terminal: {err}");
         process::exit(1);
     }
@@ -24,11 +38,23 @@ async fn main() {
     let theme = settings.theme.clone();
     let backend = CrosstermBackend::new(io::stdout());
     let events = Events::new().await;
-    let greeter = app::init_greeter(events.sender(), &settings).await;
+    let greeter = match app::init_greeter(events.sender(), &settings).await {
+        Ok(greeter) => greeter,
+        Err(err) => {
+            app::restore_terminal();
+            eprintln!("ratgreet: {err}");
+            process::exit(1);
+        }
+    };
 
     if let Err(error) = app::run(backend, greeter, theme, events).await {
-        if let Some(AuthStatus::Success) = error.downcast_ref::<AuthStatus>() {
-            return;
+        match error.downcast_ref::<AuthStatus>() {
+            Some(AuthStatus::Success) => return,
+            Some(_) => {}
+            None => {
+                app::restore_terminal();
+                eprintln!("ratgreet: {error}");
+            }
         }
 
         process::exit(1);

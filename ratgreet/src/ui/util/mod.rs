@@ -100,7 +100,7 @@ pub fn get_input_width(greeter: &Greeter, width: u16, label: &Option<String>) ->
         Some(label) => label.chars().count(),
     };
 
-    width - label_width as u16 - 4 - 1
+    width.saturating_sub(label_width as u16 + 4 + 1)
 }
 
 pub fn get_cursor_offset(greeter: &mut Greeter, length: usize) -> i16 {
@@ -128,7 +128,7 @@ pub fn get_greeting_height(
         let width = greeter.width();
 
         let paragraph = Paragraph::new(greeting.trim()).wrap(Wrap { trim: false });
-        let height = paragraph.line_count(width - (2 * padding)) + 1;
+        let height = paragraph.line_count(width.saturating_sub(2 * padding)) + 1;
 
         (Some(paragraph), height as u16)
     } else {
@@ -147,7 +147,7 @@ pub fn get_message_height<'a>(
         let paragraph = Paragraph::new(message.trim_end())
             .wrap(Wrap { trim: true })
             .style(theme.of(&[Themed::Text]));
-        let height = paragraph.line_count(width - 4);
+        let height = paragraph.line_count(width.saturating_sub(4));
 
         (Some(paragraph), height as u16 + padding)
     } else {

@@ -34,6 +34,11 @@ pub fn parse_css_color(s: &str) -> Result<Color, ParseColorError> {
 
 fn parse_hex_color(s: &str) -> Result<Color, ParseColorError> {
     let hex = s.get(1..).ok_or(ParseColorError)?;
+    // The length checks below count bytes; a multi-byte character would be
+    // sliced through and panic.
+    if !hex.is_ascii() {
+        return Err(ParseColorError);
+    }
     let (r, g, b) = match hex.len() {
         3 => expand_nibble_triplet(hex)?,
         4 => {

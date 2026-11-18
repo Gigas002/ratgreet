@@ -21,18 +21,16 @@ pub fn draw(
 ) -> Result<(u16, u16), Box<dyn Error>> {
     let size = f.area();
 
-    let width = greeter.width();
-    let height: u16 = get_height(greeter) + 1;
-    let x = (size.width - width) / 2;
-    let y = (size.height - height) / 2;
+    // Centered and clamped to the terminal, like the other screens.
+    let (x, y, width, height) = get_rect_bounds(greeter, size, 1);
 
     let container = Rect::new(x, y, width, height);
     let container_padding = greeter.container_padding();
     let frame = Rect::new(
         x + container_padding,
         y + container_padding,
-        width - (2 * container_padding),
-        height - (2 * container_padding),
+        width.saturating_sub(2 * container_padding),
+        height.saturating_sub(2 * container_padding),
     );
 
     let block = Block::default()

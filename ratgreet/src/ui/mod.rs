@@ -12,7 +12,6 @@ use std::{
     sync::Arc,
 };
 
-use chrono::prelude::*;
 use libratgreet::{Greeter, Mode, info::capslock_status, model::sessions::SessionSource};
 use ratatui::{
     Terminal,
@@ -84,8 +83,10 @@ where
 
         let status_block_size_right =
             1 + greeter.window_padding() + strings::get("status_caps").chars().count() as u16;
-        let status_block_size_left =
-            (size.width - greeter.window_padding()) - status_block_size_right;
+        let status_block_size_left = size
+            .width
+            .saturating_sub(greeter.window_padding())
+            .saturating_sub(status_block_size_right);
 
         let status_chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -174,7 +175,8 @@ fn get_time(greeter: &Greeter) -> String {
         None => Cow::Owned(strings::get("date")),
     };
 
-    Local::now().format(format.as_ref()).to_string()
+    // A bad format shows nothing rather than panicking (validated at load).
+    jiff::fmt::strtime::format(format.as_ref(), &jiff::ZonedDateTime::now()).unwrap_or_default()
 }
 
 fn status_label<'s, S>(theme: &Theme, text: S) -> Span<'s>
@@ -232,3 +234,6 @@ where
 {
     Span::styled(text.into(), theme.of(&[Themed::Text]))
 }
+
+#[cfg(test)]
+mod tests;

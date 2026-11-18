@@ -25,7 +25,8 @@ impl From<crate::theme::GreetAlign> for GreetAlign {
     }
 }
 
-pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter {
+/// The greeter, connected to greetd; the error says why it can't be.
+pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Result<Greeter, String> {
     let mut greeter = Greeter::default();
     greeter.events = Some(events);
 
@@ -39,20 +40,15 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
 
     #[cfg(not(feature = "test-harness"))]
     {
-        use std::process;
-
-        match std::env::var("GREETD_SOCK") {
-            Ok(socket) => greeter.socket = socket,
-            Err(_) => {
-                eprintln!("GREETD_SOCK must be defined");
-                process::exit(1);
-            }
-        }
-
-        greeter.connect().await;
+        greeter.socket =
+            std::env::var("GREETD_SOCK").map_err(|_| "GREETD_SOCK must be defined".to_string())?;
+        greeter.connect().await.map_err(|err| err.to_string())?;
     }
 
-    greeter.logger = crate::logger::init(&greeter);
+    greeter.logger = crate::logger::init(&greeter, settings.logging.level);
+    for warning in &settings.warnings {
+        tracing::warn!("{warning}");
+    }
 
     let sessions = get_sessions(&greeter).unwrap_or_default();
 
@@ -68,7 +64,7 @@ pub async fn init_greeter(events: Sender<Event>, settings: &Settings) -> Greeter
         selected: 0,
     };
 
-    greeter
+    Ok(greeter)
 }
 
 fn apply_config(greeter: &mut Greeter, settings: &Settings) {
