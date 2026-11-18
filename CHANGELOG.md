@@ -23,7 +23,7 @@
 ### Security
 
 - Typing and deleting edit the username, password and command in place, and cleared fields are zeroized, so fewer copies of a password are left in freed memory.
-- The `--debug` log (default `/tmp/ratgreet.log`) names everyone who tried to log in: a new file is created readable by its owner only, and a symlink at its path is refused instead of followed. An existing log keeps its mode.
+- The `--debug` log names everyone who tried to log in. Its default moved from world-writable `/tmp/ratgreet.log` to `/var/log/ratgreet/ratgreet.log`; packages should install `dist/tmpfiles.conf` as `/usr/lib/tmpfiles.d/ratgreet.conf` to create that directory for the `greeter` user. Wherever it is, a new log file is readable by its owner only, and a symlink at its path is refused instead of followed.
 
 ## 0.1.0 - 2026-09-04
 

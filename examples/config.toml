@@ -13,7 +13,7 @@
 # trace | debug | info | warn | error
 level = "info"
 # Default log path when --debug has no FILE argument
-# file = "/tmp/ratgreet.log"
+# file = "/var/log/ratgreet/ratgreet.log"
 
 # ---------------------------------------------------------------------------
 # Session: what runs after login, and where .desktop sessions are found

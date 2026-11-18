@@ -10,7 +10,9 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 #[cfg(test)]
 mod tests;
 
-pub const DEFAULT_LOG_FILE: &str = "/tmp/ratgreet.log";
+/// Where `--debug` logs by default: a directory only the greeter user can
+/// write (`dist/tmpfiles.conf` creates it), not world-writable `/tmp`.
+pub const DEFAULT_LOG_FILE: &str = "/var/log/ratgreet/ratgreet.log";
 pub const DEFAULT_XSESSION_WRAPPER: &str = "startx /usr/bin/env";
 pub const DEFAULT_ASTERISKS_CHAR: &str = "*";
 

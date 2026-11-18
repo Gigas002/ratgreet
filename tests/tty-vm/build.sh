@@ -10,7 +10,7 @@ R=$V/root; rm -rf $R; mkdir -p $R/{usr/bin,usr/lib/security,etc/pam.d,etc/greetd
 ln -s usr/bin $R/bin; ln -s usr/bin $R/sbin; ln -s usr/lib $R/lib; ln -s usr/lib $R/lib64
 chmod 1777 $R/tmp
 copy_bin() { cp -L "$1" $R/usr/bin/$(basename "${2:-$1}"); }
-for b in bash greetd unix_chkpwd tty openvt mkdir rm mount sleep cat ls id stty setsid env date tail chvt fgconsole ps pgrep pkill true head grep tr sed; do copy_bin $(type -P $b); done
+for b in bash greetd unix_chkpwd tty openvt mkdir rm mount sleep cat ls id stty setsid chown env date tail chvt fgconsole ps pgrep pkill true head grep tr sed; do copy_bin $(type -P $b); done
 ln -s bash $R/usr/bin/sh
 cp -L "$BIN" $R/usr/bin/ratgreet
 for m in pam_unix pam_permit pam_deny pam_env pam_echo; do cp -L /usr/lib/security/$m.so $R/usr/lib/security/; done
@@ -38,7 +38,7 @@ cat > $R/etc/greetd/config.toml <<P
 [terminal]
 vt = 1
 [default_session]
-command = "${RATGREET_CMD:-ratgreet --debug /tmp/ratgreet.log}"
+command = "${RATGREET_CMD:-ratgreet --debug}"
 user = "greeter"
 P
 [ -n "${THEME:-}" ] && cp "$THEME" $R/etc/ratgreet/theme.toml
@@ -60,6 +60,8 @@ cat > $R/init <<'P'
 mount -t proc proc /proc; mount -t sysfs sys /sys; mount -t devtmpfs dev /dev
 mkdir -p /dev/pts; mount -t devpts devpts /dev/pts
 mount -t tmpfs -o mode=755 tmpfs /run; mount -t tmpfs -o mode=1777 tmpfs /tmp
+# What dist/tmpfiles.conf does on a real system.
+mkdir -p -m 750 /var/log/ratgreet; chown greeter:greeter /var/log/ratgreet
 echo ratgreet-vm > /proc/sys/kernel/hostname
 export PATH=/usr/local/bin:/usr/bin
 stty -F /dev/ttyS1 raw -echo

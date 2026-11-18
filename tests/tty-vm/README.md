@@ -19,7 +19,7 @@ tests/tty-vm/vmctl.py start                              # [kernel args, e.g. vg
 tests/tty-vm/vmctl.py keys alice "<ret>"                 # text, or <f2> <esc> <ctrl-u> <caps_lock> ...
 tests/tty-vm/vmctl.py keys secret "<ret>"
 tests/tty-vm/vmctl.py shot login                         # target/tty-vm/login.png
-tests/tty-vm/vmctl.py sh "cat /tmp/session.log /tmp/ratgreet.log"
+tests/tty-vm/vmctl.py sh "cat /tmp/session.log /var/log/ratgreet/ratgreet.log"
 tests/tty-vm/vmctl.py stop
 ```
 
@@ -27,7 +27,7 @@ In the VM: user `alice`, password `secret`; PAM first sends an info message;
 two sessions (Hyprland, Sway) run `/usr/local/bin/fake-session`, which records
 the user, `XDG_*` and the tty in `/tmp/session.log`; with a config whose
 `[power]` commands call `/usr/local/bin/fake-power`, power actions land in
-`/tmp/power.log`. ratgreet runs with `--debug /tmp/ratgreet.log`
+`/tmp/power.log`. ratgreet runs with `--debug`, logging to `/var/log/ratgreet/ratgreet.log`
 (`RATGREET_CMD` overrides the command line). `sh` runs a command as root over
 a second serial port; `log` prints the console log (greetd's output).
 
