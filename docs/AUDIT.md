@@ -80,7 +80,7 @@ Builds checked: `-p ratgreet` (the AUR package and release workflow),
 | Area | Finding | Status |
 | ---- | ------- | ------ |
 | chrono | RUSTSEC-2026-0543 (unmaintained) failed `cargo deny`. It is replaced by `jiff`. `[ui].time_format` keeps strftime syntax, and a format jiff can't print is rejected at load instead of panicking while drawing. | Fixed, medium (30a2722) |
-| Debug log | The log defaults to `/tmp/ratgreet.log` and records every `CreateSession` username, which is sometimes a password typed one field early. It was created 0644 and opened through any symlink another user planted at that path. New files are now 0600 and opened with `O_NOFOLLOW`. | Fixed, low (99c58d8) |
+| Debug log | The log records every `CreateSession` username, which is sometimes a password typed one field early. It defaulted to `/tmp/ratgreet.log`, was created 0644, and was opened through any symlink another user planted at that path. New files are now 0600 and opened with `O_NOFOLLOW`. The default is now `/var/log/ratgreet/ratgreet.log`, in a directory that `dist/tmpfiles.conf` creates for `greeter` only; checked on the VM. | Fixed, low (99c58d8, a643792) |
 | Password copies | Each keystroke built a new `String`, leaving the previous copy of the password in freed memory. Edits now happen in place, and cleared buffers are zeroized. | Fixed, low (99f2bac) |
 | Passwords in the log | `PostAuthMessageResponse` is logged without its content. This had no test until this audit; checked on the VM too. | OK, test (31c7b00) |
 | Password on screen | Masked with the configured character. | OK |
@@ -108,10 +108,6 @@ Builds checked: `-p ratgreet` (the AUR package and release workflow),
 
 ## 7. Left open
 
-- **Log location.** `/tmp/ratgreet.log` is shared, and an existing file keeps
-  its old mode. A default under the greeter's home (`/var/lib/greeter`) or
-  `/var/log/ratgreet/` would be better but changes a documented path, so it is
-  a decision for the maintainer.
 - **Password growth.** In-place edits leave a copy behind only when the
   string grows past its capacity. Reserving, say, 128 bytes for the password
   buffer would close that too.
